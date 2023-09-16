@@ -2,14 +2,11 @@
 	import { Pane, Splitpanes } from 'svelte-splitpanes';
   import GraphCanvas from '@/components/graph-canvas.svelte';
 
-  import { db } from '@/lib/db';
+  import { graphDB } from '@/lib/graph-db';
   import { init_db } from '@/utils/init_db';
-  import { Graph } from '@/lib/graph';
-
-  const graph = new Graph(db);
 
   const clickInitDB = async () => {
-    await init_db(db);
+    await init_db(graphDB.db);
   };
 </script>
 
