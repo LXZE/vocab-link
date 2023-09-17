@@ -70,6 +70,10 @@ export class GraphDB {
     const links = (await this.db.edges.toArray()).map(this.marshalEdge);
     return { nodes, links };
   }
+
+  async getEdges(): Promise<Edge[]> {
+    return await this.db.edges.toArray();
+  }
 }
 
 export const graphDB = new GraphDB(new DB());

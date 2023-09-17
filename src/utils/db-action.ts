@@ -3,9 +3,11 @@ import type { DB } from '@/lib/graph-db';
 import { seedData } from './seed_data';
 import { NodeType, EdgeType, POSList } from './const';
 
-export const init_db = async (db: DB) => {
+export const clear_db = async(db: DB) => {
   await Promise.all([db.nodes.clear(), db.edges.clear()]);
+};
 
+export const init_db = async (db: DB) => {
   const languages = [
     'Thai', 'English', 'Chinese', 'Japanese', 'German', 'French', 'Korean', 'Hebrew'
   ].map((language) => ({
