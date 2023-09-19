@@ -1,4 +1,5 @@
 @import 'style/pane.css';
+@import 'style/fonts.css';
 
 @tailwind base;
 @tailwind components;
@@ -23,6 +24,7 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+  font-family: 'Noto Sans Hebrew', 'Noto Sans TC', 'Noto Sans JP', 'Noto Sans KR', 'Noto Sans Thai', sans-serif;
 }
 
 body {

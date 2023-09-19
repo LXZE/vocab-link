@@ -25,3 +25,6 @@ export enum EdgeType {
 }
 
 export const EdgeTypeList = Object.values(EdgeType);
+export const twoWaysEdge = new Set([
+  EdgeType.Means,
+]);

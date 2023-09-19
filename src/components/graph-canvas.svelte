@@ -1,5 +1,5 @@
 <script lang='ts'>
-  import { getContext, onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import { watchResize } from 'svelte-watch-resize';
 
   import { liveQuery } from 'dexie';
@@ -30,16 +30,16 @@
   let isExpandGraph = false;
   $: isExpandGraph, toggleGraphViewerFn(isExpandGraph);
 
-  const zoomIn = (k = 0.2) => {
+  const zoomIn = (k = 0.25) => {
     zoomLevel += k;
-    graphDrawer.zoom(zoomLevel);
+    graphDrawer.zoom(zoomLevel, 500);
   };
-  const zoomOut = (k = 0.2) => {
+  const zoomOut = (k = 0.25) => {
     zoomLevel -= k;
-    graphDrawer.zoom(zoomLevel);
+    graphDrawer.zoom(zoomLevel, 500);
   };
   const recenter = () => {
-    graphDrawer.zoomToFit();
+    graphDrawer.zoomToFit(500);
   };
 
   const highlightNodes = new Set<string>();
@@ -51,7 +51,7 @@
 
     // set up for click
     graphDrawer
-      .onBackgroundClick((ev) => {
+      .onBackgroundClick(() => {
         highlightNodes.clear();
         highlightEdges.clear();
         $selectedNode = null;
@@ -59,9 +59,9 @@
       .linkWidth((link: CustomLinkObject) => highlightEdges.has(link.id!) ? 5 : 1)
       .linkDirectionalParticleWidth((link: CustomLinkObject) => highlightEdges.has(link.id!) ? 4 : 0)
       .linkDirectionalParticleColor('red')
-      .linkDirectionalParticles(4)
+      .linkDirectionalParticles(1)
       .onNodeClick((node: CustomNodeObject) => {
-        console.log(`Node(${node.id}) selected`);
+        console.log(`Node(${node.id}:${node.type} [${node.text}]) selected`);
         highlightNodes.clear();
         highlightEdges.clear();
         node.connectedEdgeId?.forEach((edgeId) => {
@@ -80,7 +80,6 @@
     graphDataObserver.subscribe((graphData) => {
       graphDrawer
         .graphData(graphData)
-        // .centerAt(0, 0)
         .onZoom(({ k }) => {
           zoomLevel = k;
         });

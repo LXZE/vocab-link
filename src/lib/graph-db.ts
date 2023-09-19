@@ -1,5 +1,8 @@
+import { NodeType } from '@/utils/const';
 import Dexie, { type Table } from 'dexie';
 import type { GraphData, NodeObject, LinkObject } from 'force-graph';
+
+const DB_NAME = 'vocab_link_graph';
 
 export interface Node {
   id: string
@@ -29,7 +32,7 @@ export class DB extends Dexie {
   edges!: Table<Edge>;
 
   constructor() {
-    super('vocab_link_graph');
+    super(DB_NAME);
     this.version(1).stores({
       nodes: '&id,&text',
       edges: '&id,sourceId,targetId',
@@ -80,6 +83,12 @@ export class GraphDB {
       links: edges.map(this.marshalEdge),
     };
     return result;
+  }
+
+  getAllWordNodes(): Promise<Node[]> {
+    return this.db.nodes
+      .filter(node => node.type == NodeType.Word)
+      .toArray();
   }
 
   getAllNodes(): Promise<Node[]> { return this.db.nodes.toArray(); }
