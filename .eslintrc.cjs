@@ -27,5 +27,13 @@ module.exports = {
     indent: ['warn', 2],
     semi: 1,
     'no-redeclare': 0,
+    "no-unused-vars": [
+      "warn",
+      { 
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
   },
 }
