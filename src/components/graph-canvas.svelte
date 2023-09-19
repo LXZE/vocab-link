@@ -1,5 +1,5 @@
 <script lang='ts'>
-  import { onMount } from 'svelte';
+  import { getContext, onMount } from 'svelte';
   import { watchResize } from 'svelte-watch-resize';
 
   import { liveQuery } from 'dexie';
@@ -14,18 +14,21 @@
   import { selectedNode } from '@/lib/store';
   import { graphSetup } from '@/lib/graph-canvas-utils';
 
+  export let toggleGraphViewerFn: (_arg: boolean) => void;
+
   let canvas: HTMLElement;
   const handleResized = debounce((ev: HTMLElement) => {
     graphDrawer
       .width(ev.clientWidth)
       .height(ev.clientHeight)
       .zoomToFit(500);
-  }, 500);
+  }, 250);
 
 
   let graphDrawer: ForceGraphInstance;
   let zoomLevel = 0;
   let isExpandGraph = false;
+  $: isExpandGraph, toggleGraphViewerFn(isExpandGraph);
 
   const zoomIn = (k = 0.2) => {
     zoomLevel += k;

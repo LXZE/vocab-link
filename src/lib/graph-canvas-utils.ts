@@ -1,7 +1,6 @@
 import type { ForceGraphInstance } from 'force-graph';
-import { graphNodeColors, graphEdgeColors } from './utils';
+import { graphNodeColors, graphEdgeColors } from './color';
 import type { CustomLinkObject, CustomNodeObject } from './graph-db';
-import { selectedNode } from './store';
 
 export const graphSetup = (graphInstance: ForceGraphInstance) => {
   const NODE_RADIUS = 12;
@@ -19,12 +18,6 @@ export const graphSetup = (graphInstance: ForceGraphInstance) => {
     .nodeId('id')
     .nodeRelSize(NODE_RADIUS)
     .nodeLabel('type')
-    // .nodeColor((node: CustomNodeObject) => {
-    //   return graphNodeColors.get(node.type as string) ?? 'rgba(200, 200, 200, 0.8)';
-    // })
-    // .onNodeHover((node: CustomNodeObject | null) => {
-    //   if (node) console.log(node);
-    // })
     .nodeCanvasObject((node: CustomNodeObject, ctx, globalScale) => {
       const label = node.text ?? (node.id)!.toString();
       const fontSize = (FONT_SIZE/globalScale);
@@ -48,13 +41,7 @@ export const graphSetup = (graphInstance: ForceGraphInstance) => {
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#111';
       ctx.fillText(label, node.x ?? 0, node.y ?? 0);
-      node.__bckgDimensions = bckgDimensions; // to re-use in nodePointerAreaPaint
+      node.__bckgDimensions = bckgDimensions;
       node.__rectDimension = rectDimension;
     });
-
-    // .nodePointerAreaPaint((node: CustomNodeObject, color, ctx) => {
-    //   ctx.fillStyle = color;
-    //   const bckgDimensions = node.__bckgDimensions;
-    //   bckgDimensions && ctx.fillRect(node.x ?? 0 - bckgDimensions[0] / 2, node.y ?? 0 - bckgDimensions[1] / 2, ...bckgDimensions);
-    // });
 };

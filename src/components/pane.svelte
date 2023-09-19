@@ -1,5 +1,7 @@
 <script lang='ts'>
-	import { Pane, Splitpanes } from 'svelte-splitpanes';
+  import { setContext } from 'svelte';
+  import { Pane, Splitpanes } from 'svelte-splitpanes';
+
   import GraphCanvas from './graph-canvas.svelte';
   import SearchInput from './search-input.svelte';
 
@@ -16,16 +18,33 @@
   };
   const clickClearDB = () => clear_db(graphDB.db);
 
+  let pane;
   let lPaneSize = 50;
   let rPaneSize = 50;
+  const prevPaneSize = { lPaneSize, rPaneSize };
+  const toggleGraphViewer = (isExpanded: boolean) => {
+    if (isExpanded) {
+      prevPaneSize.lPaneSize = lPaneSize;
+      prevPaneSize.rPaneSize = rPaneSize;
+      lPaneSize = 0;
+      rPaneSize = 100;
+    } else {
+      lPaneSize = prevPaneSize.lPaneSize;
+      rPaneSize = prevPaneSize.rPaneSize;
+    }
+  };
+  setContext('pane', {
+    toggleGraphViewer
+  });
   const resetPaneSize = () => {
     lPaneSize = 50;
     rPaneSize = 50;
-  }
+  };
 </script>
 
 <Splitpanes dblClickSplitter={false} theme='custom-theme'
   on:splitter-click={resetPaneSize}
+  bind:this={pane}
 >
 	<Pane minSize={30} bind:size={lPaneSize}>
     <div class="flex flex-col p-4 gap-2">
@@ -38,10 +57,10 @@
       <SearchInput />
     </div>
   </Pane>
-	<Pane snapSize={20} bind:size={rPaneSize}>
+	<Pane snapSize={25} bind:size={rPaneSize}>
     <div class="flex flex-col h-full w-full">
       <span class='w-full text-center p-2 text-xl'>Graph Viewer</span>
-      <GraphCanvas />
+      <GraphCanvas toggleGraphViewerFn={toggleGraphViewer} />
     </div>
   </Pane>
 </Splitpanes>

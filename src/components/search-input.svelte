@@ -4,6 +4,9 @@
   import { graphDB } from '@/lib/graph-db';
 
   import { selectedNode } from '@/lib/store';
+  import { getModifierKey } from '@/lib/utils';
+
+  const modifierKey = getModifierKey();
 
   // const observableWords = liveQuery(async () => {
   //   const nodes = await graphDB.getAllNodes();
@@ -19,8 +22,8 @@
         id="search-word-input" class="join-item input input-ghost w-full max-w-xs"
         name="search" type="search" placeholder="Search word…" autocomplete="off" spellcheck="false"
       />
-      <div class="join-item">
-        <kbd class="kbd kbd-sm">⌘</kbd>
+      <div class="join-item invisible sm:visible">
+        <kbd class="kbd kbd-sm">{modifierKey}</kbd>
         <kbd class="kbd kbd-sm">K</kbd>
       </div>
   </div>
