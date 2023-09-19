@@ -37,8 +37,20 @@ export class DB extends Dexie {
   }
 }
 
+export interface CustomNodeObject extends NodeObject, Partial<Omit<NodeWithRelation, 'id'>> {
+  __bckgDimensions?: [number, number]
+  __rectDimension?: [number, number, number, number]
+}
+
+
 export interface CustomLinkObject extends LinkObject {
-  type: string
+  id?: string
+  type?: string
+}
+
+export interface CustomGraphData extends GraphData {
+  nodes: CustomNodeObject[]
+  links: CustomLinkObject[]
 }
 
 export class GraphDB {
@@ -52,22 +64,19 @@ export class GraphDB {
     this.cache = new Map();
   }
 
-  marshalNode(node: Node): NodeObject {
-    return node;
-  }
-
   marshalEdge(edge: Edge): CustomLinkObject {
     return {
+      id: edge.id,
       source: edge.sourceId,
       target: edge.targetId,
       type: edge.type,
     };
   }
 
-  async getGraphForDisplay(): Promise<GraphData> {
+  async getGraphForDisplay(): Promise<CustomGraphData> {
     const { nodes, edges } = await this.getGraph();
     const result = {
-      nodes: nodes.map(this.marshalNode),
+      nodes: this.addDetailToNodes(nodes, edges),
       links: edges.map(this.marshalEdge),
     };
     return result;
@@ -76,16 +85,11 @@ export class GraphDB {
   getAllNodes(): Promise<Node[]> { return this.db.nodes.toArray(); }
   getAllEdges(): Promise<Edge[]> { return this.db.edges.toArray(); }
   async getGraph(): Promise<Graph> {
-    // const cacheKey = 'getGraph';
-    // if (!this.isDirty && this.cache.has(cacheKey))
-    //   return this.cache.get(cacheKey);
     const [nodes, edges] = await Promise.all([this.getAllNodes(), this.getAllEdges()]);
-    // this.cache.set(cacheKey, { nodes, edges });
     return { nodes, edges };
   }
 
-  async getDetailedNodes(): Promise<NodeWithRelation[]> {
-    let {nodes, edges} = await this.getGraph();
+  addDetailToNodes(nodes: Node[], edges: Edge[]): NodeWithRelation[] {
     const nodesMap = Object.fromEntries<NodeWithRelation>(
       nodes.map(node => [node.id, {...node, neighborsNodeId: [], connectedEdgeId: []}])
     );

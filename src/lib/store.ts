@@ -1,4 +1,4 @@
 import { writable } from 'svelte/store';
-import type { Node } from '@/lib/graph-db';
+import type { CustomNodeObject } from '@/lib/graph-db';
 
-export const selectedNode = writable<Node | null>(null);
+export const selectedNode = writable<CustomNodeObject | null>(null);
