@@ -1,32 +1,43 @@
 <script lang='ts'>
+  import { onMount } from 'svelte';
+  import { watchResize } from 'svelte-watch-resize';
+
   import { liveQuery } from 'dexie';
   import ForceGraph from 'force-graph';
-  import type { NodeObject, ForceGraphInstance } from 'force-graph';
-  import { onMount } from 'svelte';
+  import type { ForceGraphInstance } from 'force-graph';
+  import { debounce } from 'lodash';
 
   import Icon from '@iconify/svelte';
 
   import { graphDB } from '@/lib/graph-db';
-  import type { Node, CustomNodeObject, CustomLinkObject } from '@/lib/graph-db';
+  import type { CustomNodeObject, CustomLinkObject } from '@/lib/graph-db';
   import { selectedNode } from '@/lib/store';
   import { graphSetup } from '@/lib/graph-canvas-utils';
 
   let canvas: HTMLElement;
+  const handleResized = debounce((ev: HTMLElement) => {
+    graphDrawer
+      .width(ev.clientWidth)
+      .height(ev.clientHeight)
+      .zoomToFit(500);
+  }, 500);
+
+
   let graphDrawer: ForceGraphInstance;
   let zoomLevel = 0;
-  $: zoomLevel
-  const zoomIn = (k = 1) => {
+  let isExpandGraph = false;
+
+  const zoomIn = (k = 0.2) => {
     zoomLevel += k;
     graphDrawer.zoom(zoomLevel);
   };
-  const zoomOut = (k = 1) => {
+  const zoomOut = (k = 0.2) => {
     zoomLevel -= k;
     graphDrawer.zoom(zoomLevel);
   };
-
-  // const getCanvasCenter = () => {
-  //   canvas.
-  // }
+  const recenter = () => {
+    graphDrawer.zoomToFit();
+  };
 
   const highlightNodes = new Set<string>();
   const highlightEdges = new Set<string>();
@@ -37,7 +48,7 @@
 
     // set up for click
     graphDrawer
-      .onBackgroundClick(() => {
+      .onBackgroundClick((ev) => {
         highlightNodes.clear();
         highlightEdges.clear();
         $selectedNode = null;
@@ -48,35 +59,35 @@
       .linkDirectionalParticles(4)
       .onNodeClick((node: CustomNodeObject) => {
         console.log(`Node(${node.id}) selected`);
-        console.debug(node)
         highlightNodes.clear();
         highlightEdges.clear();
         node.connectedEdgeId?.forEach((edgeId) => {
-          console.log(edgeId);
           highlightEdges.add(edgeId);
         });
-        console.debug(highlightEdges);
         $selectedNode = node;
       })
-      // .nodePointerAreaPaint((node: ExtendedNode, color, ctx) => {
-      //   ctx.fillStyle = color;
-      //   const bckgDimensions = node.__bckgDimensions;
-      //   bckgDimensions && ctx.fillRect(node.x ?? 0 - bckgDimensions[0] / 2, node.y ?? 0 - bckgDimensions[1] / 2, ...bckgDimensions);
-      // })
+      .nodePointerAreaPaint((node: CustomNodeObject, color, ctx) => {
+        ctx.fillStyle = color;
+        const rectDimension = node.__rectDimension;
+        rectDimension && ctx.fillRect(...rectDimension);
+      });
     const graphDataObserver = await liveQuery(async () => {
       return await graphDB.getGraphForDisplay();
     });
     graphDataObserver.subscribe((graphData) => {
-      graphDrawer.graphData(graphData);
-      // graphDrawer.zoomToFit();
-      graphDrawer.onZoom(({ k }) => {
-        zoomLevel = k;
-      });
+      graphDrawer
+        .graphData(graphData)
+        // .centerAt(0, 0)
+        .onZoom(({ k }) => {
+          zoomLevel = k;
+        });
     });
   });
 </script>
 
-<div class='border border-gray-500'>
+<div class="border border-slate-800 h-full w-full"
+  use:watchResize={handleResized}
+>
   <div class="relative z-10">
     <ul class="absolute top-4 right-4 menu menu-horizontal bg-base-200 rounded-box">
       <li><a href={null} class="tooltip" data-tip="Zoom in"
@@ -89,7 +100,37 @@
         >
         <Icon icon="material-symbols:zoom-out" width="20" />
       </a></li>
+      <li><a href={null} class="tooltip" data-tip="Re-center"
+        on:click={() => recenter()}
+        >
+        <Icon icon="material-symbols:center-focus-strong-sharp" width="20" />
+      </a></li>
+      {#if !isExpandGraph}
+        <li><a href={null} class="tooltip" data-tip="Expand"
+          on:click={() => { isExpandGraph = true; }}
+          >
+          <Icon icon="material-symbols:expand-content" width="20" />
+        </a></li>
+      {:else}
+        <li><a href={null} class="tooltip" data-tip="Mimimize"
+          on:click={() => { isExpandGraph = false; }}
+          >
+          <Icon icon="material-symbols:close-fullscreen" width="20" />
+        </a></li>
+      {/if}
     </ul>
   </div>
-  <div id='canvas' bind:this={canvas} class="bg-zinc-900" />
+  <div id='canvas' bind:this={canvas} />
 </div>
+
+<dialog id="graph_modal" class:modal-open={isExpandGraph}>
+  <div class="modal-box w-11/12 max-w-5xl">
+    <h3 class="font-bold text-lg">Hello!</h3>
+    <p class="py-4">Click the button below to close</p>
+    <div class="modal-action">
+      <form method="dialog">
+        <button class="btn">Close</button>
+      </form>
+    </div>
+  </div>
+</dialog>

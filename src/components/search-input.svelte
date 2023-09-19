@@ -3,14 +3,16 @@
   import { liveQuery } from 'dexie';
   import { graphDB } from '@/lib/graph-db';
 
-  const observableWords = liveQuery(async () => {
-    const nodes = await graphDB.getAllNodes();
-    return nodes.filter(node => node.type == 'text').slice(0, 8);
-  });
-  
+  import { selectedNode } from '@/lib/store';
+
+  // const observableWords = liveQuery(async () => {
+  //   const nodes = await graphDB.getAllNodes();
+  //   return nodes.filter(node => node.type == 'text').slice(0, 8);
+  // });
+
 </script>
 
-<div id="search-word-container" class="debug flex flex-col gap-4">
+<div id="search-word-container" class="flex flex-col gap-4">
   <div class="join items-center">
       <span class="join-item"><Icon icon="material-symbols:search" /></span>
       <input
@@ -27,4 +29,9 @@
     <li><a>Item 2</a></li>
     <li><a>Item 3</a></li> -->
   </ul>
+  {#if $selectedNode}
+    <h2>{ $selectedNode.text }</h2>
+  {:else}
+    <h2>Add a word, find a word or select in graph</h2>
+  {/if}
 </div>

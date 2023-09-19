@@ -67,4 +67,9 @@ export const seedData: { [key: string]: SeedData } = {
   'rouge': { lang: 'French', pos: POS.Adjective, means: ['붉다', 'אדום'] },
   '붉다':   { lang: 'Korean', pos: POS.Adjective, means: ['אדום'] },
   'אדום':  { lang: 'Hebrew', pos: POS.Adjective, means: [] },
+
+  'เร็ว': { lang: 'Thai', pos: POS.Adverb, means: ['fast', 'quickly', '快'] },
+  'fast': { lang: 'English', pos: POS.Adverb, means: ['quickly', '快'] },
+  'quickly': { lang: 'English', pos: POS.Adverb, means: ['快'] },
+  '快': { lang: 'Chinese', pos: POS.Adverb, means: [] },
 };

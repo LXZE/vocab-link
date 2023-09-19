@@ -5,7 +5,6 @@ export enum POS {
   Verb = 'Verb',
   Adjective = 'Adjective',
   Adverb = 'Adverb',
-  Other = 'Other',
 }
 
 export const POSList = Object.values(POS);

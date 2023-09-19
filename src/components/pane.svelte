@@ -15,10 +15,19 @@
     await graphDB.db.edges.bulkDelete(martyrEdges);
   };
   const clickClearDB = () => clear_db(graphDB.db);
+
+  let lPaneSize = 50;
+  let rPaneSize = 50;
+  const resetPaneSize = () => {
+    lPaneSize = 50;
+    rPaneSize = 50;
+  }
 </script>
 
-<Splitpanes dblClickSplitter={false} theme='custom-theme'>
-	<Pane minSize={40}>
+<Splitpanes dblClickSplitter={false} theme='custom-theme'
+  on:splitter-click={resetPaneSize}
+>
+	<Pane minSize={30} bind:size={lPaneSize}>
     <div class="flex flex-col p-4 gap-2">
       <span>Word Editor</span>
       <div class="flex">
@@ -29,8 +38,8 @@
       <SearchInput />
     </div>
   </Pane>
-	<Pane minSize={40}>
-    <div class="flex flex-col h-full">
+	<Pane snapSize={20} bind:size={rPaneSize}>
+    <div class="flex flex-col h-full w-full">
       <span class='w-full text-center p-2 text-xl'>Graph Viewer</span>
       <GraphCanvas />
     </div>
