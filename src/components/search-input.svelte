@@ -30,7 +30,7 @@
     const result = fuzzysort.go(queryText, allWordIndex, { key: 'text', limit: CANDIDATE_LIMIT });
     searchResultNodes = result.map(res => res.obj);
     // if no exact match then suggest to add a new word.
-    if (!result.some(res => res.obj.text == searchText)) {
+    if (queryText.trim().length != 0 && !result.some(res => res.obj.text == searchText)) {
       searchResultNodes = [...searchResultNodes, {
         id: '', type: '', text: searchText
       }];
@@ -38,12 +38,10 @@
   }, 100, { trailing: true });
 
   $: searchText, searchCandidateIndex = 0;
-  $: {
-    if (searchText.length > 0) {
-      searchNodesByText(searchText);
-    } else {
-      searchResultNodes = [];
-    }
+  $: if (searchText.length > 0) {
+    searchNodesByText(searchText);
+  } else {
+    searchResultNodes = [];
   }
 
   const selectWord = () => {

@@ -17,6 +17,9 @@ dependencies:
   lodash:
     specifier: ^4.17.21
     version: 4.17.21
+  svelte-tags-input:
+    specifier: ^5.0.0
+    version: 5.0.0
   svelte-watch-resize:
     specifier: ^1.0.3
     version: 1.0.3
@@ -2161,6 +2164,10 @@ packages:
       esm-env-robust: 0.0.3
       svelte: 4.2.0
     dev: true
+
+  /svelte-tags-input@5.0.0:
+    resolution: {integrity: sha512-lH0rkSdVcurCEnJBkHG9gTQfpz0gsQmVBzA+TQqSLL1/A0okRsz8lZJzVC20d6Eufkr24b5zHkYzQmrbIaqS/w==}
+    dev: false
 
   /svelte-watch-resize@1.0.3:
     resolution: {integrity: sha512-ktqTnkdqfx4YRqeMJcX1jeSnQ2kJUVlj4/rLdaLbhM+RrxN87vS2EZ0cxlGZ7eXV86Ef05Q3dVqEiR+12PeoIw==}

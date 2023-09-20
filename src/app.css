@@ -1,13 +1,15 @@
 @import 'style/pane.css';
 @import 'style/fonts.css';
+@import 'style/svelte-tags-input';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-
-.debug {
-  border: 1px solid red;
+@layer utilities {
+	.debug {
+		@apply border border-solid border-red-500;
+	}
 }
 
 :root {
