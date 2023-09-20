@@ -1,12 +1,17 @@
 # Vocab link PoC
 
 ## todo
-- [ ] re-design UI for both word adding & editing zone and interactive graph zone
 - [ ] create logic to get a graph where excluded unconnected nodes
-- [ ] 2 style word editing (flat level & hierachical (word->lang->pos->meaning))
 - [ ] use @decorator for graphDB caching
 - [ ] Add node highlight color for each node type
 - [ ] Add search module that supports all language
+- [ ] query each type for autocomplete + use fuzzysort function
+- [ ] provide exist connection to tags
+- [ ] click tag to edit word
+- [ ] show edit level in breadcrumb
+
+## future
+- [ ] 2 style word editing (flat level & hierachical (word->lang->pos->meaning))
 
 ## note
 - reusable components (should work with display graph in sidebar and modal)
