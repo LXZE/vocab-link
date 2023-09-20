@@ -1,11 +1,12 @@
 <script lang='ts'>
-  import { setContext } from 'svelte';
+  import { get } from 'svelte/store';
   import { Pane, Splitpanes } from 'svelte-splitpanes';
 
   import GraphCanvas from './graph-canvas.svelte';
   import SearchInput from './search-input.svelte';
 
   import { graphDB } from '@/lib/graph-db';
+  import { leftPaneSize, rightPaneSize } from '@/lib/store';
   import { init_db, clear_db } from '@/utils/db-action';
 
   const clickInitDB = () => init_db(graphDB.db);
@@ -19,8 +20,9 @@
   const clickClearDB = () => clear_db(graphDB.db);
 
   let pane;
-  let lPaneSize = 50;
-  let rPaneSize = 50;
+  let lPaneSize = get(leftPaneSize);
+  $: lPaneSize, leftPaneSize.set(lPaneSize);
+  let rPaneSize = get(rightPaneSize);
   const prevPaneSize = { lPaneSize, rPaneSize };
   const toggleGraphViewer = (isExpanded: boolean) => {
     if (isExpanded) {
@@ -33,9 +35,7 @@
       rPaneSize = prevPaneSize.rPaneSize;
     }
   };
-  setContext('pane', {
-    toggleGraphViewer
-  });
+
   const resetPaneSize = () => {
     lPaneSize = 50;
     rPaneSize = 50;

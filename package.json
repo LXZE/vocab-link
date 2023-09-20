@@ -34,6 +34,7 @@
   "dependencies": {
     "dexie": "4.0.1-alpha.25",
     "force-graph": "^1.43.4",
+    "fuzzysort": "^2.0.4",
     "lodash": "^4.17.21",
     "svelte-watch-resize": "^1.0.3"
   }

@@ -6,9 +6,9 @@ export function getAgentSystem(){
     return 'unknown';
   }
   const platform = navigator.userAgent.toLowerCase();
-  if(platform.startsWith('win')) return 'windows';
-  if(platform.startsWith('mac')) return 'macos';
-  if(platform.startsWith('linux')) return 'linux';
+  if(platform.includes('mac')) return 'macos';
+  if(platform.includes('win')) return 'windows';
+  if(platform.includes('linux')) return 'linux';
   return 'unknown';
 }
 

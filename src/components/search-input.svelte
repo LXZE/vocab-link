@@ -2,6 +2,7 @@
   import Icon from '@iconify/svelte';
   import { debounce } from 'lodash';
   import { liveQuery } from 'dexie';
+  import fuzzysort from 'fuzzysort';
 
   import { graphDB, type Node } from '@/lib/graph-db';
   import { selectedNode } from '@/lib/store';
@@ -23,30 +24,28 @@
     ? 'visible' : 'invisible';
 
   let searchText = '';
+  let searchCandidateIndex = 0;
   let searchResultNodes: Node[] = [];
-  const searchCandidateWord = debounce(async (queryText: string) => {
-    const tmpCandidate = [];
-    for (let node of allWordNodes) {
-      if (node.text.startsWith(queryText)) {
-        tmpCandidate.push(node);
-      }
-      if (tmpCandidate.length == CANDIDATE_LIMIT) {
-        break;
-      }
+
+  const searchNodesByText = debounce(async (queryText: string) => {
+    const result = fuzzysort.go(queryText, allWordNodes, { key: 'text', limit: CANDIDATE_LIMIT });
+    searchResultNodes = result.map(res => res.obj);
+    if (!result.some(res => res.obj.text == searchText)) {
+      searchResultNodes = [...searchResultNodes, {
+        id: '', type: '', text: `Add "${searchText}" as a new word`
+      }];
     }
-    searchResultNodes = tmpCandidate;
   }, 100, { trailing: true });
-  // let searchCandidateIndex = 0;
+  $: searchText, searchCandidateIndex = 0;
   $: {
     if (searchText.length > 0) {
-      searchCandidateWord(searchText);
+      searchNodesByText(searchText);
     } else {
       searchResultNodes = [];
     }
   }
 
-  const keydownHandler = (ev: KeyboardEvent) => {
-    // console.log(ev);
+  const bodyKeydownHandler = (ev: KeyboardEvent) => {
     if (!searchTextInputElem) return;
     const isModifierKeyPressed = getAgentSystem() == 'macos' ? ev.metaKey : ev.ctrlKey;
     if (
@@ -57,26 +56,47 @@
       ev.preventDefault();
       searchTextInputElem.focus();
       isSearchTextInputSelected = true;
-    } else if (
-      document.activeElement == searchTextInputElem &&
-      ev.key == 'Escape'
-    ) {
-      ev.preventDefault();
-      searchTextInputElem.blur();
-    } else {
-      // switch(ev.key) {
-      // case 'ArrowUp':
-      //   searchCandidateIndex = 0;
-
-      //   break;
-      // case 'ArrowDown':
-      //   searchCandidateIndex = Math.min(candi);
-      //   break;
-      // default: break
-      // }
+    } else if (document.activeElement == searchTextInputElem) {
+      switch(ev.key) {
+      case 'ArrowUp':
+        ev.preventDefault();
+        if (searchCandidateIndex == 0) break;
+        searchCandidateIndex -= 1;
+        return false;
+      case 'ArrowDown':
+        ev.preventDefault();
+        if (searchCandidateIndex == searchResultNodes.length - 1) break;
+        searchCandidateIndex += 1;
+        return false;
+      case 'Escape':
+        searchTextInputElem.blur();
+        break;
+      case 'Enter':
+        ev.preventDefault();
+        console.log(searchCandidateIndex);
+        selectedNode.set(searchResultNodes[searchCandidateIndex] ?? null);
+        searchText = '';
+        // if selected Node is null, move word editor to add new word and move searchTextInput to new word
+        // else then move to word edit page
+        break;
+      default: break;
+      }
     }
   };
-  const focusBlurHandler = ((isFocus: boolean) => () => { isSearchTextInputSelected = isFocus; });
+
+  // const searchKeyHandler = (ev: KeyboardEvent) => {
+  //   if (!searchTextInputElem) return;
+  //   switch(ev.key) {
+    
+  //   default: break;
+  //   }
+  // };
+  
+  const focusBlurHandler = ((isFocus: boolean) => () => {
+    setTimeout(() => {
+      isSearchTextInputSelected = isFocus;
+    }, 100);
+  });
 </script>
 
 
@@ -84,7 +104,8 @@
   <div class="join items-center">
       <span class="join-item"><Icon icon="material-symbols:search" /></span>
       <input bind:this={searchTextInputElem} bind:value={searchText}
-        on:focus={focusBlurHandler(true)} on:blur={focusBlurHandler(false)}
+        on:focus={focusBlurHandler(true)}
+        on:blur={focusBlurHandler(false)}
         id="search-word-input" class="join-item input input-ghost w-full max-w-xs"
         name="search" type="search" placeholder="Search word…" autocomplete="off" spellcheck="false"
       />
@@ -94,21 +115,23 @@
       </div>
   </div>
   <ul class="
-    menu bg-base-200 w-56 rounded-box absolute top-16
-    {searchCandidateActiveClass}
-  ">
-      {#each searchResultNodes as node, _idx}
-        <li><a href={null} on:click={() => console.log(node.text)}>
+      menu bg-base-200 w-full max-w-sm rounded-box absolute top-16 z-10
+      {searchCandidateActiveClass}
+    "
+  >
+      {#each searchResultNodes as node, idx}
+        <li><a href={null} class="{searchCandidateIndex == idx ? 'active' : ''}"
+          on:click={(ev) => {
+            console.debug(ev);
+          }}
+          on:mouseenter={(ev) => {
+            ev.preventDefault();
+            searchCandidateIndex = idx;
+          }}
+        >
           {node.text}
         </a></li>
       {/each}
-      {#if (!searchResultNodes.map(node => node.text).includes(searchText)) }
-        <li><a href={null}
-          on:click={(ev) => console.debug(ev)}
-        >
-          Add "{searchText}" as a new word
-        </a>
-      {/if}
   </ul>
 
   {#if $selectedNode}
@@ -118,4 +141,4 @@
   {/if}
 </form>
 
-<svelte:body on:keydown={keydownHandler} />
+<svelte:body on:keydown={bodyKeydownHandler} />
