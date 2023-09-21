@@ -1,6 +1,7 @@
 import { NodeType } from '@/utils/const';
 import Dexie, { type Table } from 'dexie';
 import type { GraphData, NodeObject, LinkObject } from 'force-graph';
+import { generateUID } from './utils';
 
 const DB_NAME = 'vocab_link_graph';
 
@@ -8,6 +9,10 @@ export interface Node {
   id: string
   text: string
   type: string
+  property: {
+    note?: string
+    [key: string]: any
+  }
 }
 
 export interface NodeWithRelation extends Node {
@@ -28,8 +33,8 @@ export interface Graph {
 }
 
 export class DB extends Dexie {
-  nodes!: Table<Node>;
-  edges!: Table<Edge>;
+  nodes!: Table<Node, string>;
+  edges!: Table<Edge, string>;
 
   constructor() {
     super(DB_NAME);
@@ -85,10 +90,18 @@ export class GraphDB {
     return result;
   }
 
-  getAllWordNodes(): Promise<Node[]> {
+  getAllNodesByType(nodeType: NodeType): Promise<Node[]> {
     return this.db.nodes
-      .filter(node => node.type == NodeType.Word)
+      .filter(node => node.type == nodeType)
       .toArray();
+  }
+
+  async getAllConnectionByNodeId(nodeId: string): Promise<Node[]> {
+    const connectedEdges = await this.db.edges
+      .where('sourceId').equals(nodeId)
+      .toArray();
+    return (await this.db.nodes.bulkGet(connectedEdges.map(edge => edge.targetId)))
+      .filter((node): node is Node => node !== undefined);
   }
 
   getAllNodes(): Promise<Node[]> { return this.db.nodes.toArray(); }
@@ -110,6 +123,23 @@ export class GraphDB {
       nodesMap[edge.targetId].connectedEdgeId.push(edge.id);
     });
     return Object.values(nodesMap);
+  }
+
+  async createNewNode(type: NodeType, text: string): Promise<Node> {
+    const newNode: Node = {
+      id: generateUID(),
+      type,
+      text,
+      property: { note: '' },
+    };
+    await this.db.nodes.add(newNode);
+    return newNode;
+  }
+
+  async updateWordNoteById(nodeId: string, note: string) {
+    await this.db.nodes.update(nodeId, {
+      'property.note': note,
+    });
   }
 }
 

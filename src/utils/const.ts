@@ -11,6 +11,7 @@ export const POSList = Object.values(POS);
 
 export enum NodeType {
   Word = 'word',
+  Form = 'form',
   POS = 'pos',
   Language = 'language',
   Text = 'text'
@@ -28,3 +29,10 @@ export const EdgeTypeList = Object.values(EdgeType);
 export const twoWaysEdge = new Set([
   EdgeType.Means,
 ]);
+
+export enum EditorState {
+  NoWordSelected,
+  NewWordCreated,
+  WordSelected,
+  NonWordSelected,
+}

@@ -8,6 +8,7 @@
   import { graphDB, type Node } from '@/lib/graph-db';
   import { selectedNode } from '@/lib/store';
   import { getAgentSystem, getModifierKey } from '@/lib/utils';
+    import { NodeType } from '@/utils/const';
 
   const CANDIDATE_LIMIT = 10;
 
@@ -16,7 +17,7 @@
   }
 
   let allWordIndex: IndexedNode[];
-  const allWordNodesObservable = liveQuery(async () => await graphDB.getAllWordNodes());
+  const allWordNodesObservable = liveQuery(async () => await graphDB.getAllNodesByType(NodeType.Word));
   allWordNodesObservable.subscribe(async (nodes) => {
     allWordIndex = nodes.map((node) => ({ ...node, textPrepared: fuzzysort.prepare(node.text) }));
   });
@@ -32,7 +33,7 @@
     // if no exact match then suggest to add a new word.
     if (queryText.trim().length != 0 && !result.some(res => res.obj.text == searchText)) {
       searchResultNodes = [...searchResultNodes, {
-        id: '', type: '', text: searchText
+        id: '', type: '', text: searchText, property: {}
       }];
     }
   }, 100, { trailing: true });

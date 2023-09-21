@@ -1,6 +1,5 @@
 @import 'style/pane.css';
 @import 'style/fonts.css';
-@import 'style/svelte-tags-input';
 
 @tailwind base;
 @tailwind components;

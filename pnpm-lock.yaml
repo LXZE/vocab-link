@@ -25,6 +25,9 @@ dependencies:
     version: 1.0.3
 
 devDependencies:
+  '@iconify/icons-material-symbols':
+    specifier: ^1.2.55
+    version: 1.2.55
   '@iconify/svelte':
     specifier: ^3.1.4
     version: 3.1.4(svelte@4.2.0)
@@ -359,6 +362,12 @@ packages:
 
   /@humanwhocodes/object-schema@1.2.1:
     resolution: {integrity: sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==}
+    dev: true
+
+  /@iconify/icons-material-symbols@1.2.55:
+    resolution: {integrity: sha512-ba4JPfH6yirdi462ahnkW0GAqBuyYV1Pd6OQ6IfbTk/5LUwD8y/yoVExacTsJRTBTUDSe6xgKHNIV6V4HgR8hg==}
+    dependencies:
+      '@iconify/types': 2.0.0
     dev: true
 
   /@iconify/svelte@3.1.4(svelte@4.2.0):

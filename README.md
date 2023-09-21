@@ -9,6 +9,7 @@
 - [ ] provide exist connection to tags
 - [ ] click tag to edit word
 - [ ] show edit level in breadcrumb
+- [ ] Map Node and Edge interface to class
 
 ## future
 - [ ] 2 style word editing (flat level & hierachical (word->lang->pos->meaning))
