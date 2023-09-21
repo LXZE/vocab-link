@@ -4,14 +4,14 @@ import { seedData } from './seed_data';
 import { NodeType, EdgeType, POSList } from './const';
 
 export const clear_db = async(db: DB) => {
-  await Promise.all([db.nodes.clear(), db.edges.clear()]);
+  await Promise.all([db.nodes.clear(), db.edges.clear(), db.nodeInfo.clear()]);
 };
 
 export const init_db = async (db: DB) => {
   const languages = [
     'Thai', 'English', 'Chinese', 'Japanese', 'German', 'French', 'Korean', 'Hebrew'
   ].map((language) => ({
-    id: generateUID(), text: language, type: NodeType.Language, property: {},
+    id: generateUID(), text: language, type: NodeType.Language,
   }));
   const languageIdMap = Object.fromEntries(languages.map((node) => (
     [node.text, node.id]
@@ -19,7 +19,7 @@ export const init_db = async (db: DB) => {
   await db.nodes.bulkAdd(languages);
 
   const POSs = POSList.map((pos) => ({
-    id: generateUID(), text: pos, type: NodeType.POS, property: {},
+    id: generateUID(), text: pos, type: NodeType.POS,
   }));
   const POSIdMap = Object.fromEntries(POSs.map((pos) => (
     [pos.text, pos.id]
@@ -28,7 +28,7 @@ export const init_db = async (db: DB) => {
 
 
   const words = Object.keys(seedData).map((word) => ({
-    id: generateUID(), text: word, type: NodeType.Word, property: {},
+    id: generateUID(), text: word, type: NodeType.Word,
   }));
   const wordIdMap = Object.fromEntries(words.map((word) => (
     [word.text, word.id]

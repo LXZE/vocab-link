@@ -1,7 +1,7 @@
 <script lang='ts'>
   // @ts-ignore
   import Tags from 'svelte-tags-input';
-  import { liveQuery } from 'dexie';
+  import { onMount } from 'svelte';
   import { debounce } from 'lodash';
 
   import Icon from '@iconify/svelte';
@@ -9,16 +9,13 @@
 
   import { selectedNode } from '@/lib/store';
   import { NodeType, EditorState } from '@/utils/const';
-  import { graphDB, type CustomNodeObject, type Node } from '@/lib/graph-db';
-  import { TwoWayMap } from '@/lib/utils';
+  import { graphDB, type CustomNodeObject, type Node, type TargetNode } from '@/lib/graph-db';
 
   const getEditorStatus = (node: CustomNodeObject | null): EditorState => {
     if (node == null) return EditorState.NoWordSelected;
-    else if (node.id == '') return EditorState.NewWordCreated;
     else if (node.type !== NodeType.Word) return EditorState.NonWordSelected;
     return EditorState.WordSelected;
   };
-  let currentEditorState: EditorState = getEditorStatus($selectedNode);
   $: currentEditorState = getEditorStatus($selectedNode);
 
   let editorStatusText: string;
@@ -26,8 +23,6 @@
     switch(currentEditorState) {
     case EditorState.NoWordSelected:
       editorStatusText = 'Try to search a word or select in graph'; break;
-    case EditorState.NewWordCreated:
-      editorStatusText = `New word: ${ $selectedNode!.text }`; break;
     case EditorState.WordSelected:
       editorStatusText = `Word: ${ $selectedNode!.text }`; break;
     case EditorState.NonWordSelected:
@@ -36,32 +31,60 @@
     }
   }
 
-  let languageNodeMap: TwoWayMap = new Map();
-  let languageChoices = liveQuery(async () => {
-    const nodes = await graphDB.getAllNodesByType(NodeType.Language);
-    languageNodeMap = new TwoWayMap(nodes.map(node => [node.id, node.text]));
-    return nodes;
+  const proxyHandler: ProxyHandler<any> = {
+    get: function(target: any, prop: any) {
+      const val: CallableFunction = target[prop];
+      if (typeof val === 'function') {
+        switch(prop) {
+        case 'push':
+          return function (node: TargetNode) {
+            console.log('array pushed');
+            console.log(node);
+            return Array.prototype[prop].apply(target, arguments);
+          };
+        case 'splice':
+          return function (removedIndex: number) {
+            console.log(`array index ${removedIndex} spliced`);
+            return Array.prototype[prop].apply(target, arguments);
+          };
+        case 'pop':
+          return function () {
+            const popResult: TargetNode = Array.prototype[prop].apply(target, arguments);
+            console.log(`Array popped: ${popResult}`);
+            return popResult;
+          };
+        default: return val.bind(target);
+        }
+      }
+      return val;
+    }
+  };
+
+  const getAllLanguageChoices = async () => graphDB.getAllNodesByType(NodeType.Language);
+  let allLanguageChoices: Node[] = [];
+  let languageSelected: TargetNode[] = [];
+  $: languageTextSelected = new Set(languageSelected.map(node => node.id));
+  $: languageChoices = allLanguageChoices.filter(node => !languageTextSelected.has(node.id));
+
+  const getAllPOSChoices = async () => graphDB.getAllNodesByType(NodeType.POS);
+  let allPOSChoices: Node[] = [];
+  let POSSelected: TargetNode[] = [];
+  $: POSTextSelected = new Set(POSSelected.map(node => node.id));
+  $: POSChoices = allPOSChoices.filter(node => !POSTextSelected.has(node.id));
+
+  onMount(async () => {
+    allPOSChoices = await getAllPOSChoices();
+    allLanguageChoices = await getAllLanguageChoices();
   });
-  let languageSelected: string[] = [];
 
-
-  let POSNodeMap: TwoWayMap = new Map();
-  let POSChoices = liveQuery(async () => {
-    const nodes = await graphDB.getAllNodesByType(NodeType.POS);
-    POSNodeMap = new TwoWayMap(nodes.map(node => [node.id, node.text]));
-    return nodes;
-  });
-  let POSSelected: string[] = [];
-
-  let connectedNodes: Node[] = [];
+  let connectedNodes: TargetNode[] = [];
   const setSelectedTags = async (nodeId: string) => {
     connectedNodes = await graphDB.getAllConnectionByNodeId(nodeId);
-    languageSelected = connectedNodes
-      .filter(node => node.type == NodeType.Language)
-      .map(node => node.text);
-    POSSelected = connectedNodes
-      .filter(node => node.type == NodeType.POS)
-      .map(node => node.text);
+    languageSelected = new Proxy(
+      connectedNodes.filter(node => node.type == NodeType.Language),
+      proxyHandler,
+    );
+    POSSelected = connectedNodes.filter(node => node.type == NodeType.POS);
   };
   const resetSelected = () => {
     connectedNodes = [];
@@ -69,19 +92,37 @@
     POSSelected = [];
   };
 
-  $: if (currentEditorState == EditorState.WordSelected && $selectedNode) {
+  $: if (currentEditorState == EditorState.WordSelected && $selectedNode != null) {
     setSelectedTags($selectedNode.id as string);
   } else {
     resetSelected();
   }
 
-  let wordNote: string = $selectedNode?.property?.note ?? '';
-  const updateWordNote = debounce(async (nodeId: string) => {
-    await graphDB.updateWordNoteById(nodeId, wordNote);
+  const setWordNote = async () => {
+    wordNote = await graphDB.getWordNoteById($selectedNode?.id as string);
+  };
+  let wordNote: string = '';
+  $: wordNote, updateWordNoteHandler();
+  $: $selectedNode, setWordNote();
+
+  const updateWordNote = debounce(async (nodeId: string, note: string) => {
+    await graphDB.updateWordNoteById(nodeId, note);
   }, 200, { trailing: true, maxWait: 500 });
-  // const noteChangeHandler = (ev: InputEvent) => {
-  //   console.log(ev.target.value);
-  // };
+  const updateWordNoteHandler = () => {
+    if ($selectedNode) {
+      updateWordNote($selectedNode.id as string, wordNote);
+    }
+  };
+
+  const deleteWordHandler = async () => {
+    let isConfirm = confirm('All connection and word will be deleted, confirm?');
+    if (isConfirm) {
+      const toDeleteNodeId = ($selectedNode?.id ?? '') as string;
+      selectedNode.set(null);
+      graphDB.deleteNodeAndConnectedEdges(toDeleteNodeId);
+      graphDB.deleteWordNoteById(toDeleteNodeId);
+    }
+  };
 
 </script>
 
@@ -95,40 +136,41 @@
     {/if}
   </div>
 
-  {#if [EditorState.WordSelected, EditorState.NewWordCreated].includes(currentEditorState)}
+  {#if currentEditorState == EditorState.WordSelected}
     <div class='flex flex-col gap-2 my-2'>
       <span>Language</span>
-      <Tags
-        tags={languageSelected}
-        autoComplete={$languageChoices.filter(({ text }) => !languageSelected.includes(text))}
-        autoCompleteKey={'text'}
+      <Tags bind:tags={languageSelected}
+        placeholder={'Add language...'}
+        autoComplete={languageChoices} minChars={0}
+        autoCompleteKey={'text'} autoCompleteShowKey={'text'}
         onlyAutocomplete onlyUnique
       />
     </div>
 
     <div class='flex flex-col gap-2 my-2'>
       <span>Part of speech</span>
-      <Tags tags={POSSelected}
-        autoComplete={$POSChoices.filter(({ text }) => !POSSelected.includes(text))}
-        autoCompleteKey={'text'}
+      <Tags bind:tags={POSSelected}
+        placeholder={'Add part of speech...'}
+        autoComplete={POSChoices}
+        autoCompleteKey={'text'} autoCompleteShowKey={'text'}
         onlyAutocomplete onlyUnique
       />
     </div>
 
-    <div class='flex flex-col gap-2 my-2'>
+    <!-- <div class='flex flex-col gap-2 my-2'>
       <span>Means</span>
       <Tags tags={[]} />
-    </div>
+    </div> -->
 
     <div class='flex flex-col gap-2 my-2'>
       <span>Note</span>
-      <input type="text" bind:value={wordNote}>
+      <input type="text" bind:value={wordNote} />
     </div>
 
-    {#if currentEditorState == EditorState.NewWordCreated}
+    {#if currentEditorState == EditorState.WordSelected}
       <div class="flex">
-        <button class="btn btn-success">
-          Save
+        <button class="btn btn-error" on:click={deleteWordHandler}>
+          Delete
         </button>
       </div>
     {/if}

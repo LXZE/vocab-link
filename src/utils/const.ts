@@ -32,7 +32,6 @@ export const twoWaysEdge = new Set([
 
 export enum EditorState {
   NoWordSelected,
-  NewWordCreated,
   WordSelected,
   NonWordSelected,
 }

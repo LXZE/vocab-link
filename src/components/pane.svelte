@@ -48,8 +48,10 @@
         <button class="btn" on:click={clickInitDB}>Init db</button>
         <button class="btn" on:click={clickClearDB}>Nuke db</button>
       </div>
-      <SearchInput />
-      <WordEditor />
+      <div class="flex flex-col p-2 items-stretch">
+        <SearchInput />
+        <WordEditor />
+      </div>
     </div>
   </Pane>
 	<Pane snapSize={25} bind:size={rPaneSize}>

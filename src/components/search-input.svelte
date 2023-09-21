@@ -8,7 +8,7 @@
   import { graphDB, type Node } from '@/lib/graph-db';
   import { selectedNode } from '@/lib/store';
   import { getAgentSystem, getModifierKey } from '@/lib/utils';
-    import { NodeType } from '@/utils/const';
+  import { NodeType } from '@/utils/const';
 
   const CANDIDATE_LIMIT = 10;
 
@@ -22,7 +22,9 @@
     allWordIndex = nodes.map((node) => ({ ...node, textPrepared: fuzzysort.prepare(node.text) }));
   });
 
+
   let searchTextInputElem: HTMLInputElement;
+  let isSearchFocused: boolean;
   let searchText = '';
   let searchCandidateIndex = 0;
   let searchResultNodes: Node[] = [];
@@ -33,7 +35,7 @@
     // if no exact match then suggest to add a new word.
     if (queryText.trim().length != 0 && !result.some(res => res.obj.text == searchText)) {
       searchResultNodes = [...searchResultNodes, {
-        id: '', type: '', text: searchText, property: {}
+        id: '', type: '', text: searchText,
       }];
     }
   }, 100, { trailing: true });
@@ -48,9 +50,12 @@
   const selectWord = async () => {
     const allEdges = await graphDB.getAllEdges();
     const selectedResult = searchResultNodes[searchCandidateIndex] ?? null;
-    if (selectedResult) {
+    if (selectedResult && selectedResult.id != '') {
       const detailedNode = graphDB.addDetailToNode(selectedResult, allEdges);
       selectedNode.set(detailedNode);
+    } else if (selectedResult.id == '') {
+      const newNode = await graphDB.createNewNode(NodeType.Word, searchText.trim());
+      selectedNode.set(newNode);
     }
     searchText = '';
     searchTextInputElem.blur();
@@ -96,6 +101,7 @@
   <div class="join items-center">
       <span class="join-item"><Icon icon="material-symbols:search" /></span>
       <input bind:this={searchTextInputElem} bind:value={searchText}
+        on:focus={() => isSearchFocused = true} on:blur={() => isSearchFocused = false}
         id="search-word-input" class="join-item input input-ghost w-full max-w-xs"
         name="search" type="search" placeholder="Search word…" autocomplete="off" spellcheck="false"
       />
@@ -104,7 +110,7 @@
         <kbd class="kbd kbd-sm">K</kbd>
       </div>
   </div>
-  {#if searchText != ''}
+  {#if isSearchFocused}
     <ul class="
         menu bg-base-200 w-full max-w-sm rounded-box absolute top-16 z-10
         {(searchText.length > 0) ? 'visible' : 'invisible'}
@@ -112,7 +118,11 @@
     >
         {#each searchResultNodes as node, idx}
           <li><a href={null} class="{searchCandidateIndex == idx ? 'active' : ''}"
-            on:click={() => selectWord()}
+            on:mousedown={(ev) => {
+              // use mousedown instead of click to prevent blur behaviour
+              ev.preventDefault();
+              selectWord();
+            }}
             on:mouseenter={() => searchCandidateIndex = idx}
           >
             {#if (node.type != '')}
