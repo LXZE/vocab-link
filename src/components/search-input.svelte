@@ -45,8 +45,13 @@
     searchResultNodes = [];
   }
 
-  const selectWord = () => {
-    selectedNode.set(searchResultNodes[searchCandidateIndex] ?? null);
+  const selectWord = async () => {
+    const allEdges = await graphDB.getAllEdges();
+    const selectedResult = searchResultNodes[searchCandidateIndex] ?? null;
+    if (selectedResult) {
+      const detailedNode = graphDB.addDetailToNode(selectedResult, allEdges);
+      selectedNode.set(detailedNode);
+    }
     searchText = '';
     searchTextInputElem.blur();
   };

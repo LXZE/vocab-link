@@ -111,6 +111,20 @@ export class GraphDB {
     return { nodes, edges };
   }
 
+  addDetailToNode(node: Node, edges: Edge[]): NodeWithRelation {
+    const extendedNode: NodeWithRelation = {...node, neighborsNodeId: [], connectedEdgeId: []};
+    edges.forEach(edge => {
+      if (edge.sourceId == node.id) {
+        extendedNode.neighborsNodeId.push(edge.targetId);
+        extendedNode.connectedEdgeId.push(edge.id);
+      } else if (edge.targetId == node.id) {
+        extendedNode.neighborsNodeId.push(edge.sourceId);
+        extendedNode.connectedEdgeId.push(edge.id);
+      }
+    });
+    return extendedNode;
+  }
+
   addDetailToNodes(nodes: Node[], edges: Edge[]): NodeWithRelation[] {
     const nodesMap = Object.fromEntries<NodeWithRelation>(
       nodes.map(node => [node.id, {...node, neighborsNodeId: [], connectedEdgeId: []}])

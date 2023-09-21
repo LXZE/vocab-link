@@ -1,23 +1,25 @@
 <script lang='ts'>
   // @ts-ignore
   import Tags from 'svelte-tags-input';
+  import { liveQuery } from 'dexie';
   import { debounce } from 'lodash';
+
   import Icon from '@iconify/svelte';
   import closeIcon from '@iconify/icons-material-symbols/close';
 
   import { selectedNode } from '@/lib/store';
   import { NodeType, EditorState } from '@/utils/const';
-  import { graphDB } from '@/lib/graph-db';
-    import { liveQuery } from 'dexie';
+  import { graphDB, type CustomNodeObject, type Node } from '@/lib/graph-db';
+  import { TwoWayMap } from '@/lib/utils';
 
-  let currentEditorState: EditorState = EditorState.NoWordSelected;
-  $: currentEditorState, console.log(currentEditorState);
-  $: {
-    if ($selectedNode == null) { currentEditorState = EditorState.NoWordSelected; }
-    else if ($selectedNode.id == '') { currentEditorState = EditorState.NewWordCreated; }
-    else if ($selectedNode.type !== NodeType.Word) { currentEditorState = EditorState.NonWordSelected; }
-    else { currentEditorState = EditorState.WordSelected; }
-  }
+  const getEditorStatus = (node: CustomNodeObject | null): EditorState => {
+    if (node == null) return EditorState.NoWordSelected;
+    else if (node.id == '') return EditorState.NewWordCreated;
+    else if (node.type !== NodeType.Word) return EditorState.NonWordSelected;
+    return EditorState.WordSelected;
+  };
+  let currentEditorState: EditorState = getEditorStatus($selectedNode);
+  $: currentEditorState = getEditorStatus($selectedNode);
 
   let editorStatusText: string;
   $: {
@@ -27,11 +29,50 @@
     case EditorState.NewWordCreated:
       editorStatusText = `New word: ${ $selectedNode!.text }`; break;
     case EditorState.WordSelected:
-      editorStatusText = `${$selectedNode!.type?.toUpperCase()}: ${ $selectedNode!.text }`; break;
-    case EditorState.NonWordSelected:
       editorStatusText = `Word: ${ $selectedNode!.text }`; break;
+    case EditorState.NonWordSelected:
+      editorStatusText = `${$selectedNode!.type?.toUpperCase()}: ${ $selectedNode!.text }`; break;
     default: break;
     }
+  }
+
+  let languageNodeMap: TwoWayMap = new Map();
+  let languageChoices = liveQuery(async () => {
+    const nodes = await graphDB.getAllNodesByType(NodeType.Language);
+    languageNodeMap = new TwoWayMap(nodes.map(node => [node.id, node.text]));
+    return nodes;
+  });
+  let languageSelected: string[] = [];
+
+
+  let POSNodeMap: TwoWayMap = new Map();
+  let POSChoices = liveQuery(async () => {
+    const nodes = await graphDB.getAllNodesByType(NodeType.POS);
+    POSNodeMap = new TwoWayMap(nodes.map(node => [node.id, node.text]));
+    return nodes;
+  });
+  let POSSelected: string[] = [];
+
+  let connectedNodes: Node[] = [];
+  const setSelectedTags = async (nodeId: string) => {
+    connectedNodes = await graphDB.getAllConnectionByNodeId(nodeId);
+    languageSelected = connectedNodes
+      .filter(node => node.type == NodeType.Language)
+      .map(node => node.text);
+    POSSelected = connectedNodes
+      .filter(node => node.type == NodeType.POS)
+      .map(node => node.text);
+  };
+  const resetSelected = () => {
+    connectedNodes = [];
+    languageSelected = [];
+    POSSelected = [];
+  };
+
+  $: if (currentEditorState == EditorState.WordSelected && $selectedNode) {
+    setSelectedTags($selectedNode.id as string);
+  } else {
+    resetSelected();
   }
 
   let wordNote: string = $selectedNode?.property?.note ?? '';
@@ -41,25 +82,6 @@
   // const noteChangeHandler = (ev: InputEvent) => {
   //   console.log(ev.target.value);
   // };
-  
-  let languageChoices = liveQuery(async () => {
-    const res = await graphDB.getAllNodesByType(NodeType.Language);
-    console.log(res)
-    return res;
-  });
-  // let allConnectedNode = liveQuery(async () => {
-  //   if ($selectedNode && $selectedNode.id != '')
-  //     return await graphDB.getAllConnectionByNodeId($selectedNode.id as string);
-  //   return [];
-  // });
-  let currentSelectedLanguage: string[] = [];
-  // allConnectedNode.subscribe((connectedNode) => {
-  //   currentSelectedLanguage = connectedNode
-  //     .filter(node => node.type == NodeType.Language)
-  //     .map(node => node.text);
-  //   console.log(currentSelectedLanguage)
-  // });
-
 
 </script>
 
@@ -76,19 +98,25 @@
   {#if [EditorState.WordSelected, EditorState.NewWordCreated].includes(currentEditorState)}
     <div class='flex flex-col gap-2 my-2'>
       <span>Language</span>
-      <Tags tags={currentSelectedLanguage} 
-        autoComplete={$languageChoices} autoCompleteKey={'text'}
+      <Tags
+        tags={languageSelected}
+        autoComplete={$languageChoices.filter(({ text }) => !languageSelected.includes(text))}
+        autoCompleteKey={'text'}
         onlyAutocomplete onlyUnique
       />
     </div>
 
     <div class='flex flex-col gap-2 my-2'>
       <span>Part of speech</span>
-      <Tags tags={[]} />
+      <Tags tags={POSSelected}
+        autoComplete={$POSChoices.filter(({ text }) => !POSSelected.includes(text))}
+        autoCompleteKey={'text'}
+        onlyAutocomplete onlyUnique
+      />
     </div>
 
     <div class='flex flex-col gap-2 my-2'>
-      <span>Meaning</span>
+      <span>Means</span>
       <Tags tags={[]} />
     </div>
 
@@ -97,11 +125,13 @@
       <input type="text" bind:value={wordNote}>
     </div>
 
-    <div class="flex">
-      <button class="btn btn-success">
-        Save
-      </button>
-    </div>
+    {#if currentEditorState == EditorState.NewWordCreated}
+      <div class="flex">
+        <button class="btn btn-success">
+          Save
+        </button>
+      </div>
+    {/if}
   {/if}
 
 </div>
@@ -119,6 +149,9 @@
   :global(.svelte-tags-input-tag) {
     @apply badge badge-lg !important;
     /* @apply bg-zinc-600 !important; */
+  }
+  :global(.svelte-tags-input-matchs-parent li){
+    @apply bg-zinc-800;
   }
 }
 

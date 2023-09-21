@@ -3,8 +3,7 @@
   import { watchResize } from 'svelte-watch-resize';
 
   import { liveQuery } from 'dexie';
-  import ForceGraph from 'force-graph';
-  import type { ForceGraphInstance } from 'force-graph';
+  import ForceGraph, { type ForceGraphInstance } from 'force-graph';
   import { debounce } from 'lodash';
 
   import Icon from '@iconify/svelte';
@@ -23,7 +22,6 @@
       .height(ev.clientHeight)
       .zoomToFit(500);
   }, 250);
-
 
   let graphDrawer: ForceGraphInstance;
   let zoomLevel = 0;
@@ -44,6 +42,17 @@
 
   const highlightNodes = new Set<string>();
   const highlightEdges = new Set<string>();
+  const clearHighlight = () => {
+    highlightNodes.clear();
+    highlightEdges.clear();
+  };
+  selectedNode.subscribe((maybeNode) => {
+    clearHighlight();
+    if (maybeNode && maybeNode.id != '') {
+      (maybeNode.neighborsNodeId ?? []).forEach(nodeId => highlightNodes.add(nodeId));
+      (maybeNode.connectedEdgeId ?? []).forEach(edgeId => highlightEdges.add(edgeId));
+    }
+  });
 
   onMount(async () => {
     graphDrawer = ForceGraph()(canvas);
@@ -52,8 +61,6 @@
     // set up for click
     graphDrawer
       .onBackgroundClick(() => {
-        highlightNodes.clear();
-        highlightEdges.clear();
         $selectedNode = null;
       })
       .linkWidth((link: CustomLinkObject) => highlightEdges.has(link.id!) ? 5 : 1)
@@ -61,22 +68,15 @@
       .linkDirectionalParticleColor('red')
       .linkDirectionalParticles(1)
       .onNodeClick((node: CustomNodeObject) => {
-        console.log(`Node(${node.id}:${node.type} [${node.text}]) selected`);
-        highlightNodes.clear();
-        highlightEdges.clear();
-        node.connectedEdgeId?.forEach((edgeId) => {
-          highlightEdges.add(edgeId);
-        });
+        // console.log(`Node(${node.id}:${node.type} [${node.text}]) selected on graph`);
         $selectedNode = node;
       })
       .nodePointerAreaPaint((node: CustomNodeObject, color, ctx) => {
         ctx.fillStyle = color;
-        const rectDimension = node.__rectDimension;
-        rectDimension && ctx.fillRect(...rectDimension);
+        node.__rectDimension && ctx.fillRect(...node.__rectDimension);
       });
-    const graphDataObserver = await liveQuery(async () => {
-      return await graphDB.getGraphForDisplay();
-    });
+
+    const graphDataObserver = liveQuery(async () => await graphDB.getGraphForDisplay());
     graphDataObserver.subscribe((graphData) => {
       graphDrawer
         .graphData(graphData)
