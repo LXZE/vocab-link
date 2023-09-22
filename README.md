@@ -2,11 +2,9 @@
 
 ## todo
 - [ ] create logic to get a graph where excluded unconnected nodes
-- [ ] use @decorator for graphDB caching
 - [ ] Add node highlight color for each node type
 - [ ] Add search module that supports all language
 - [ ] query each type for autocomplete + use fuzzysort function
-- [ ] provide exist connection to tags
 - [ ] click tag to edit word
 - [ ] show edit level in breadcrumb
 - [ ] Map Node and Edge interface to class

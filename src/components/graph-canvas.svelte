@@ -7,6 +7,11 @@
   import { debounce } from 'lodash';
 
   import Icon from '@iconify/svelte';
+  import IconZoomIn from '@iconify/icons-material-symbols/zoom-in';
+  import IconZoomOut from '@iconify/icons-material-symbols/zoom-out';
+  import IconCenterFocus from '@iconify/icons-material-symbols/center-focus-strong-sharp';
+  import IconExpandContent from '@iconify/icons-material-symbols/expand-content';
+  import IconShrinkContent from '@iconify/icons-material-symbols/close-fullscreen';
 
   import { graphDB } from '@/lib/graph-db';
   import type { CustomNodeObject, CustomLinkObject, Node } from '@/lib/graph-db';
@@ -102,29 +107,29 @@
       <li><a href={null} class="tooltip" data-tip="Zoom in"
         on:click={() => zoomIn()}
         >
-        <Icon icon="material-symbols:zoom-in" width="20" />
+        <Icon icon={IconZoomIn} width="20" />
       </a></li>
       <li><a href={null} class="tooltip" data-tip="Zoom out"
         on:click={() => zoomOut()}
         >
-        <Icon icon="material-symbols:zoom-out" width="20" />
+        <Icon icon={IconZoomOut} width="20" />
       </a></li>
       <li><a href={null} class="tooltip" data-tip="Re-center"
         on:click={() => recenter()}
         >
-        <Icon icon="material-symbols:center-focus-strong-sharp" width="20" />
+        <Icon icon={IconCenterFocus} width="20" />
       </a></li>
       {#if !isExpandGraph}
         <li><a href={null} class="tooltip" data-tip="Expand"
           on:click={() => { isExpandGraph = true; }}
           >
-          <Icon icon="material-symbols:expand-content" width="20" />
+          <Icon icon={IconExpandContent} width="20" />
         </a></li>
       {:else}
         <li><a href={null} class="tooltip" data-tip="Mimimize"
           on:click={() => { isExpandGraph = false; }}
           >
-          <Icon icon="material-symbols:close-fullscreen" width="20" />
+          <Icon icon={IconShrinkContent} width="20" />
         </a></li>
       {/if}
     </ul>

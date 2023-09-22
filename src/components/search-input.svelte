@@ -1,9 +1,12 @@
 <script lang='ts'>
-  import Icon from '@iconify/svelte';
   import { debounce } from 'lodash';
   import { liveQuery } from 'dexie';
   import fuzzysort from 'fuzzysort';
   import type Fuzzysort from 'fuzzysort';
+
+  import Icon from '@iconify/svelte';
+  import IconSearch from '@iconify/icons-material-symbols/search';
+  import IconClose from '@iconify/icons-material-symbols/close';
 
   import { graphDB, type Node } from '@/lib/graph-db';
   import { selectedNode } from '@/lib/store';
@@ -96,21 +99,29 @@
 
 
 <form id="search-word-container" class="flex flex-col gap-4 relative">
-  <div class="join items-center">
-      <span class="join-item"><Icon icon="material-symbols:search" /></span>
-      <input bind:this={searchTextInputElem} bind:value={searchText}
-        on:focus={() => isSearchFocused = true} on:blur={() => isSearchFocused = false}
-        id="search-word-input" class="join-item input input-ghost w-full max-w-xs"
+  <div class="flex relative items-center justify-center max-w-md">
+      <span class="absolute left-0 items-center pl-2">
+        <Icon icon={IconSearch} width="20" />
+      </span>
+      <input class="pl-10 py-2 input input-ghost w-full" id="search-word-input"
         name="search" type="search" placeholder="Search word…" autocomplete="off" spellcheck="false"
+        bind:this={searchTextInputElem} bind:value={searchText}
+        on:focus={() => isSearchFocused = true} on:blur={() => isSearchFocused = false}
       />
-      <div class="join-item invisible sm:visible">
+      <div class="flex gap-1 items-center absolute right-0 pr-2 invisible sm:visible">
         <kbd class="kbd kbd-sm">{getModifierKey()}</kbd>
         <kbd class="kbd kbd-sm">K</kbd>
+        <button class="{searchText.length > 0 ? 'visible' : 'invisible'}" on:click={(ev) => {
+          ev.preventDefault();
+          searchText = '';
+        }}>
+          <Icon icon={IconClose} width="20" />
+        </button>
       </div>
   </div>
   {#if isSearchFocused}
     <ul class="
-        menu bg-base-200 w-full max-w-sm rounded-box absolute top-16 z-10
+        menu bg-base-200 w-full max-w-md rounded-box absolute top-16 z-10
         {(searchText.length > 0) ? 'visible' : 'invisible'}
       "
     >
