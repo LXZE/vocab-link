@@ -11,7 +11,7 @@
   import { NodeType, EditorState, EdgeType } from '@/utils/const';
   import { graphDB } from '@/lib/graph-db';
   import type { Node, CustomNodeObject, TargetNode } from '@/lib/graph-db';
-    import { nodeSortFn } from '@/lib/utils';
+  import { nodeSortFn } from '@/lib/utils';
 
   const getEditorStatus = (node: CustomNodeObject | null): EditorState => {
     if (node == null) return EditorState.NoWordSelected;
@@ -41,6 +41,7 @@
   });
   $: languageSelected = $connectedNodes ? $connectedNodes.filter(node => node.type == NodeType.Language).sort(nodeSortFn) : [];
   $: POSSelected = $connectedNodes ? $connectedNodes.filter(node => node.type == NodeType.POS).sort(nodeSortFn) : [];
+  $: meansSelected = $connectedNodes ? $connectedNodes.filter(node => node.type == NodeType.Word).sort(nodeSortFn) : [];
 
   const createAddTagHandler = (edgeType: EdgeType) => async (targetNode: Node) => {
     if ($selectedNode) {
@@ -90,12 +91,13 @@
       deletingCallback={deleteTagHandler}
     />
 
-    <!-- <div class='flex flex-col gap-2 my-2'>
-      <span>Means</span>
-      <Tags tags={[]} />
-    </div> -->
-    <WordNote />
+    <TagsInput selectedTags={meansSelected}
+      label={'Means'} tagType={NodeType.Word}
+      addingCallback={() => {}}
+      deletingCallback={() => {}}
+    />
 
+    <WordNote />
 
     {#if currentEditorState == EditorState.WordSelected}
       <div class="flex">

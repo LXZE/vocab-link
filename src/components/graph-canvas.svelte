@@ -54,9 +54,7 @@
   selectedNode.subscribe(async (maybeNode) => {
     clearHighlight();
     if (maybeNode && maybeNode.id != '') {
-      const nodeId = maybeNode.id as string;
-      const allConnectedEdges = await graphDB.getConnectedEdgesByNodeId(nodeId);
-      const detailedMaybeNode = graphDB.addDetailToNode(maybeNode as unknown as Node, allConnectedEdges);
+      const detailedMaybeNode = await graphDB.addDetailToNode(maybeNode as unknown as Node);
       (detailedMaybeNode.neighborsNodeId).forEach(nodeId => highlightNodes.add(nodeId));
       (detailedMaybeNode.connectedEdgeId).forEach(edgeId => highlightEdges.add(edgeId));
     }

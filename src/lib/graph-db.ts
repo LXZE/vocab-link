@@ -98,7 +98,7 @@ export class GraphDB {
   async getGraphForDisplay(): Promise<CustomGraphData> {
     const { nodes, edges } = await this.getGraph();
     const result = {
-      nodes: this.addDetailToNodes(nodes, edges),
+      nodes,
       links: edges.map(this.marshalEdge),
     };
     return result;
@@ -139,12 +139,13 @@ export class GraphDB {
       .toArray();
   }
 
-  addDetailToNode(node: Node, edges: Edge[]): NodeWithRelation {
+  async addDetailToNode(node: Node): Promise<NodeWithRelation> {
+    const allConnectedEdges = await graphDB.getConnectedEdgesByNodeId(node.id);
     const extendedNode: NodeWithRelation = {...node,
       neighborsNodeId: [], connectedEdgeId: [],
       neighborsNodesAmount: 0, connectedEdgesAmount: 0,
     };
-    edges.forEach(edge => {
+    allConnectedEdges.forEach(edge => {
       if (edge.sourceId == node.id) {
         extendedNode.neighborsNodeId.push(edge.targetId);
         extendedNode.connectedEdgeId.push(edge.id);
@@ -160,7 +161,8 @@ export class GraphDB {
     return extendedNode;
   }
 
-  addDetailToNodes(nodes: Node[], edges: Edge[]): NodeWithRelation[] {
+  async addDetailToNodes(nodes: Node[]): Promise<NodeWithRelation[]> {
+    const edges = await this.getAllEdges();
     const nodesMap = Object.fromEntries<NodeWithRelation>(
       nodes.map(node => [node.id, {...node,
         neighborsNodeId: [], connectedEdgeId: [],
