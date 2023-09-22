@@ -35,7 +35,7 @@
     // if no exact match then suggest to add a new word.
     if (queryText.trim().length != 0 && !result.some(res => res.obj.text == searchText)) {
       searchResultNodes = [...searchResultNodes, {
-        id: '', type: '', text: searchText,
+        id: '', type: '', text: searchText, createdAt: Date.now(),
       }];
     }
   }, 100, { trailing: true });
@@ -48,11 +48,9 @@
   }
 
   const selectWord = async () => {
-    const allEdges = await graphDB.getAllEdges();
     const selectedResult = searchResultNodes[searchCandidateIndex] ?? null;
     if (selectedResult && selectedResult.id != '') {
-      const detailedNode = graphDB.addDetailToNode(selectedResult, allEdges);
-      selectedNode.set(detailedNode);
+      selectedNode.set(selectedResult);
     } else if (selectedResult.id == '') {
       const newNode = await graphDB.createNewNode(NodeType.Word, searchText.trim());
       selectedNode.set(newNode);

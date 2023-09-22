@@ -1,15 +1,17 @@
 <script lang='ts'>
-  // @ts-ignore
-  import Tags from 'svelte-tags-input';
-  import { onMount } from 'svelte';
-  import { debounce } from 'lodash';
+  import { liveQuery } from 'dexie';
 
   import Icon from '@iconify/svelte';
   import closeIcon from '@iconify/icons-material-symbols/close';
 
+  import TagsInput from '@/components/tags-input.svelte';
+  import WordNote from '@/components/word-note.svelte';
+
   import { selectedNode } from '@/lib/store';
-  import { NodeType, EditorState } from '@/utils/const';
-  import { graphDB, type CustomNodeObject, type Node, type TargetNode } from '@/lib/graph-db';
+  import { NodeType, EditorState, EdgeType } from '@/utils/const';
+  import { graphDB } from '@/lib/graph-db';
+  import type { Node, CustomNodeObject, TargetNode } from '@/lib/graph-db';
+    import { nodeSortFn } from '@/lib/utils';
 
   const getEditorStatus = (node: CustomNodeObject | null): EditorState => {
     if (node == null) return EditorState.NoWordSelected;
@@ -31,86 +33,25 @@
     }
   }
 
-  const proxyHandler: ProxyHandler<any> = {
-    get: function(target: any, prop: any) {
-      const val: CallableFunction = target[prop];
-      if (typeof val === 'function') {
-        switch(prop) {
-        case 'push':
-          return function (node: TargetNode) {
-            console.log('array pushed');
-            console.log(node);
-            return Array.prototype[prop].apply(target, arguments);
-          };
-        case 'splice':
-          return function (removedIndex: number) {
-            console.log(`array index ${removedIndex} spliced`);
-            return Array.prototype[prop].apply(target, arguments);
-          };
-        case 'pop':
-          return function () {
-            const popResult: TargetNode = Array.prototype[prop].apply(target, arguments);
-            console.log(`Array popped: ${popResult}`);
-            return popResult;
-          };
-        default: return val.bind(target);
-        }
-      }
-      return val;
+  $: connectedNodes = liveQuery<TargetNode[]>(async () => {
+    if (currentEditorState == EditorState.WordSelected && $selectedNode != null) {
+      return await graphDB.getAllConnectionByNodeId($selectedNode.id as string);
+    }
+    return [];
+  });
+  $: languageSelected = $connectedNodes ? $connectedNodes.filter(node => node.type == NodeType.Language).sort(nodeSortFn) : [];
+  $: POSSelected = $connectedNodes ? $connectedNodes.filter(node => node.type == NodeType.POS).sort(nodeSortFn) : [];
+
+  const createAddTagHandler = (edgeType: EdgeType) => async (targetNode: Node) => {
+    if ($selectedNode) {
+      await graphDB.createNewEdge(edgeType, $selectedNode?.id as string, targetNode.id);
+      $selectedNode = $selectedNode; // trigger graph
     }
   };
-
-  const getAllLanguageChoices = async () => graphDB.getAllNodesByType(NodeType.Language);
-  let allLanguageChoices: Node[] = [];
-  let languageSelected: TargetNode[] = [];
-  $: languageTextSelected = new Set(languageSelected.map(node => node.id));
-  $: languageChoices = allLanguageChoices.filter(node => !languageTextSelected.has(node.id));
-
-  const getAllPOSChoices = async () => graphDB.getAllNodesByType(NodeType.POS);
-  let allPOSChoices: Node[] = [];
-  let POSSelected: TargetNode[] = [];
-  $: POSTextSelected = new Set(POSSelected.map(node => node.id));
-  $: POSChoices = allPOSChoices.filter(node => !POSTextSelected.has(node.id));
-
-  onMount(async () => {
-    allPOSChoices = await getAllPOSChoices();
-    allLanguageChoices = await getAllLanguageChoices();
-  });
-
-  let connectedNodes: TargetNode[] = [];
-  const setSelectedTags = async (nodeId: string) => {
-    connectedNodes = await graphDB.getAllConnectionByNodeId(nodeId);
-    languageSelected = new Proxy(
-      connectedNodes.filter(node => node.type == NodeType.Language),
-      proxyHandler,
-    );
-    POSSelected = connectedNodes.filter(node => node.type == NodeType.POS);
-  };
-  const resetSelected = () => {
-    connectedNodes = [];
-    languageSelected = [];
-    POSSelected = [];
-  };
-
-  $: if (currentEditorState == EditorState.WordSelected && $selectedNode != null) {
-    setSelectedTags($selectedNode.id as string);
-  } else {
-    resetSelected();
-  }
-
-  const setWordNote = async () => {
-    wordNote = await graphDB.getWordNoteById($selectedNode?.id as string);
-  };
-  let wordNote: string = '';
-  $: wordNote, updateWordNoteHandler();
-  $: $selectedNode, setWordNote();
-
-  const updateWordNote = debounce(async (nodeId: string, note: string) => {
-    await graphDB.updateWordNoteById(nodeId, note);
-  }, 200, { trailing: true, maxWait: 500 });
-  const updateWordNoteHandler = () => {
+  const deleteTagHandler = async (targetNode: TargetNode) => {
     if ($selectedNode) {
-      updateWordNote($selectedNode.id as string, wordNote);
+      await graphDB.deleteEdge(targetNode.linkedEdgeId);
+      $selectedNode = $selectedNode; // trigger graph
     }
   };
 
@@ -137,35 +78,24 @@
   </div>
 
   {#if currentEditorState == EditorState.WordSelected}
-    <div class='flex flex-col gap-2 my-2'>
-      <span>Language</span>
-      <Tags bind:tags={languageSelected}
-        placeholder={'Add language...'}
-        autoComplete={languageChoices} minChars={0}
-        autoCompleteKey={'text'} autoCompleteShowKey={'text'}
-        onlyAutocomplete onlyUnique
-      />
-    </div>
+    <TagsInput bind:selectedTags={languageSelected}
+      label={'Language'} tagType={NodeType.Language}
+      addingCallback={createAddTagHandler(EdgeType.IsLanguage)}
+      deletingCallback={deleteTagHandler}
+    />
 
-    <div class='flex flex-col gap-2 my-2'>
-      <span>Part of speech</span>
-      <Tags bind:tags={POSSelected}
-        placeholder={'Add part of speech...'}
-        autoComplete={POSChoices}
-        autoCompleteKey={'text'} autoCompleteShowKey={'text'}
-        onlyAutocomplete onlyUnique
-      />
-    </div>
+    <TagsInput selectedTags={POSSelected}
+      label={'Part of speech'} tagType={NodeType.POS}
+      addingCallback={createAddTagHandler(EdgeType.IsPOS)}
+      deletingCallback={deleteTagHandler}
+    />
 
     <!-- <div class='flex flex-col gap-2 my-2'>
       <span>Means</span>
       <Tags tags={[]} />
     </div> -->
+    <WordNote />
 
-    <div class='flex flex-col gap-2 my-2'>
-      <span>Note</span>
-      <input type="text" bind:value={wordNote} />
-    </div>
 
     {#if currentEditorState == EditorState.WordSelected}
       <div class="flex">

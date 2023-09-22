@@ -10,6 +10,7 @@ export interface Node {
   id: string
   text: string
   type: string
+  createdAt: number
 }
 
 export interface NodeInfo {
@@ -20,11 +21,14 @@ export interface NodeInfo {
 
 export interface TargetNode extends Node {
   linkedEdgeId: string
+  edgeCreatedAt: number
 }
 
 export interface NodeWithRelation extends Node {
   connectedEdgeId: string[]
+  connectedEdgesAmount: number
   neighborsNodeId: string[]
+  neighborsNodesAmount: number
 }
 
 export interface Edge {
@@ -32,6 +36,7 @@ export interface Edge {
   type: string
   sourceId: string
   targetId: string
+  createdAt: number
 }
 
 export interface Graph {
@@ -111,9 +116,9 @@ export class GraphDB {
       .toArray();
     const connectedNodes = await this.db.nodes.bulkGet(connectedEdges.map(edge => edge.targetId));
     return zip(connectedNodes, connectedEdges)
-      .map(([node, edge]) => {
+      .map(([node, edge]): TargetNode | undefined => {
         if (node && edge) {
-          return {...node, linkedEdgeId: edge.id};
+          return {...node, linkedEdgeId: edge.id, edgeCreatedAt: edge.createdAt};
         }
         return undefined;
       })
@@ -127,15 +132,29 @@ export class GraphDB {
     return { nodes, edges };
   }
 
+  async getConnectedEdgesByNodeId(nodeId: string): Promise<Edge[]> {
+    return this.db.edges
+      .where('sourceId').equals(nodeId)
+      .or('targetId').equals(nodeId)
+      .toArray();
+  }
+
   addDetailToNode(node: Node, edges: Edge[]): NodeWithRelation {
-    const extendedNode: NodeWithRelation = {...node, neighborsNodeId: [], connectedEdgeId: []};
+    const extendedNode: NodeWithRelation = {...node,
+      neighborsNodeId: [], connectedEdgeId: [],
+      neighborsNodesAmount: 0, connectedEdgesAmount: 0,
+    };
     edges.forEach(edge => {
       if (edge.sourceId == node.id) {
         extendedNode.neighborsNodeId.push(edge.targetId);
         extendedNode.connectedEdgeId.push(edge.id);
+        extendedNode.neighborsNodesAmount += 1;
+        extendedNode.connectedEdgesAmount += 1;
       } else if (edge.targetId == node.id) {
         extendedNode.neighborsNodeId.push(edge.sourceId);
         extendedNode.connectedEdgeId.push(edge.id);
+        extendedNode.neighborsNodesAmount += 1;
+        extendedNode.connectedEdgesAmount += 1;
       }
     });
     return extendedNode;
@@ -143,33 +162,37 @@ export class GraphDB {
 
   addDetailToNodes(nodes: Node[], edges: Edge[]): NodeWithRelation[] {
     const nodesMap = Object.fromEntries<NodeWithRelation>(
-      nodes.map(node => [node.id, {...node, neighborsNodeId: [], connectedEdgeId: []}])
+      nodes.map(node => [node.id, {...node,
+        neighborsNodeId: [], connectedEdgeId: [],
+        neighborsNodesAmount: 0, connectedEdgesAmount: 0,
+      }])
     );
     edges.forEach(edge => {
       nodesMap[edge.sourceId].neighborsNodeId.push(edge.targetId);
       nodesMap[edge.sourceId].connectedEdgeId.push(edge.id);
+      nodesMap[edge.sourceId].neighborsNodesAmount += 1;
+      nodesMap[edge.sourceId].connectedEdgesAmount += 1;
 
       nodesMap[edge.targetId].neighborsNodeId.push(edge.sourceId);
       nodesMap[edge.targetId].connectedEdgeId.push(edge.id);
+      nodesMap[edge.targetId].neighborsNodesAmount += 1;
+      nodesMap[edge.targetId].connectedEdgesAmount += 1;
     });
     return Object.values(nodesMap);
   }
 
   async createNewNode(type: NodeType, text: string): Promise<Node> {
     const newNode: Node = {
-      id: generateUID(),
-      type,
-      text,
+      id: generateUID(), createdAt: Date.now(),
+      type, text,
     };
     await this.db.nodes.add(newNode);
     return newNode;
   }
 
   async deleteNodeAndConnectedEdges(nodeId: string) {
-    const connectedEdgesId = (await this.db.edges
-      .where('sourceId').equals(nodeId)
-      .or('targetId').equals(nodeId)
-      .toArray()).map(edge => edge.id);
+    const connectedEdgesId = (await this.getConnectedEdgesByNodeId(nodeId))
+      .map(edge => edge.id);
     Promise.all([
       this.db.edges.bulkDelete(connectedEdgesId),
       this.db.nodes.delete(nodeId),
@@ -178,11 +201,14 @@ export class GraphDB {
 
   async createNewEdge(type: EdgeType, sourceId: string, targetId: string): Promise<Edge> {
     const newEdge: Edge = {
-      id: generateUID(),
-      type, sourceId, targetId
+      id: generateUID(), createdAt: Date.now(),
+      type, sourceId, targetId,
     };
     await this.db.edges.add(newEdge);
     return newEdge;
+  }
+  async deleteEdge(edgeId: string): Promise<void> {
+    return this.db.edges.delete(edgeId);
   }
 
   async getWordNoteById(nodeId?: string): Promise<string> {

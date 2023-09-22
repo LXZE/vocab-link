@@ -9,7 +9,7 @@
   import Icon from '@iconify/svelte';
 
   import { graphDB } from '@/lib/graph-db';
-  import type { CustomNodeObject, CustomLinkObject } from '@/lib/graph-db';
+  import type { CustomNodeObject, CustomLinkObject, Node } from '@/lib/graph-db';
   import { selectedNode } from '@/lib/store';
   import { graphSetup } from '@/lib/graph-canvas-utils';
 
@@ -20,7 +20,7 @@
     graphDrawer
       .width(ev.clientWidth)
       .height(ev.clientHeight)
-      .zoomToFit(500);
+      .zoomToFit(500, 20);
   }, 250);
 
   let graphDrawer: ForceGraphInstance;
@@ -37,7 +37,7 @@
     graphDrawer.zoom(zoomLevel, 500);
   };
   const recenter = () => {
-    graphDrawer.zoomToFit(500);
+    graphDrawer.zoomToFit(500, 20);
   };
 
   const highlightNodes = new Set<string>();
@@ -46,11 +46,14 @@
     highlightNodes.clear();
     highlightEdges.clear();
   };
-  selectedNode.subscribe((maybeNode) => {
+  selectedNode.subscribe(async (maybeNode) => {
     clearHighlight();
     if (maybeNode && maybeNode.id != '') {
-      (maybeNode.neighborsNodeId ?? []).forEach(nodeId => highlightNodes.add(nodeId));
-      (maybeNode.connectedEdgeId ?? []).forEach(edgeId => highlightEdges.add(edgeId));
+      const nodeId = maybeNode.id as string;
+      const allConnectedEdges = await graphDB.getConnectedEdgesByNodeId(nodeId);
+      const detailedMaybeNode = graphDB.addDetailToNode(maybeNode as unknown as Node, allConnectedEdges);
+      (detailedMaybeNode.neighborsNodeId).forEach(nodeId => highlightNodes.add(nodeId));
+      (detailedMaybeNode.connectedEdgeId).forEach(edgeId => highlightEdges.add(edgeId));
     }
   });
 
@@ -60,6 +63,7 @@
 
     // set up for click
     graphDrawer
+      .onZoom(({ k }) => zoomLevel = k)
       .onBackgroundClick(() => {
         $selectedNode = null;
       })
@@ -68,7 +72,6 @@
       .linkDirectionalParticleColor('red')
       .linkDirectionalParticles(1)
       .onNodeClick((node: CustomNodeObject) => {
-        // console.log(`Node(${node.id}:${node.type} [${node.text}]) selected on graph`);
         $selectedNode = node;
       })
       .nodePointerAreaPaint((node: CustomNodeObject, color, ctx) => {
@@ -77,12 +80,16 @@
       });
 
     const graphDataObserver = liveQuery(async () => await graphDB.getGraphForDisplay());
-    graphDataObserver.subscribe((graphData) => {
-      graphDrawer
-        .graphData(graphData)
-        .onZoom(({ k }) => {
-          zoomLevel = k;
-        });
+    let nodes: CustomNodeObject[] = [];
+    let links: CustomLinkObject[] = [];
+    const updateGraph = () => graphDrawer.graphData({ nodes, links });
+    graphDataObserver.subscribe(({ nodes: newNodes, links: newLinks }) => {
+      const { nodes: previousNode, links: previousLink } = graphDrawer.graphData();
+      const previousNodeData = new Map(previousNode.map((node: CustomNodeObject) => [node.id! as string, node]));
+      const previousLinkData = new Map(previousLink.map((link: CustomLinkObject) => [link.id!, link]));
+      nodes = newNodes.map((node) => previousNodeData.get(node.id! as string) ?? node);
+      links = newLinks.map((link) => previousLinkData.get(link.id! as string) ?? link);
+      updateGraph();
     });
   });
 </script>

@@ -1,8 +1,10 @@
 import { get } from 'svelte/store';
 import type { ForceGraphInstance } from 'force-graph';
-import { graphNodeColors, graphEdgeColors } from './color';
-import type { CustomLinkObject, CustomNodeObject } from './graph-db';
-import { selectedNode } from './store';
+
+import { graphNodeColors, graphEdgeColors } from '@/lib/color';
+import type { CustomLinkObject, CustomNodeObject } from '@/lib/graph-db';
+import { selectedNode } from '@/lib/store';
+
 import { EdgeType, twoWaysEdge } from '@/utils/const';
 
 export const graphSetup = (graphInstance: ForceGraphInstance) => {

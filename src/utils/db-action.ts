@@ -11,7 +11,7 @@ export const init_db = async (db: DB) => {
   const languages = [
     'Thai', 'English', 'Chinese', 'Japanese', 'German', 'French', 'Korean', 'Hebrew'
   ].map((language) => ({
-    id: generateUID(), text: language, type: NodeType.Language,
+    id: generateUID(), text: language, type: NodeType.Language, createdAt: Date.now(),
   }));
   const languageIdMap = Object.fromEntries(languages.map((node) => (
     [node.text, node.id]
@@ -19,7 +19,7 @@ export const init_db = async (db: DB) => {
   await db.nodes.bulkAdd(languages);
 
   const POSs = POSList.map((pos) => ({
-    id: generateUID(), text: pos, type: NodeType.POS,
+    id: generateUID(), text: pos, type: NodeType.POS, createdAt: Date.now(),
   }));
   const POSIdMap = Object.fromEntries(POSs.map((pos) => (
     [pos.text, pos.id]
@@ -28,7 +28,7 @@ export const init_db = async (db: DB) => {
 
 
   const words = Object.keys(seedData).map((word) => ({
-    id: generateUID(), text: word, type: NodeType.Word,
+    id: generateUID(), text: word, type: NodeType.Word, createdAt: Date.now(),
   }));
   const wordIdMap = Object.fromEntries(words.map((word) => (
     [word.text, word.id]
@@ -40,20 +40,24 @@ export const init_db = async (db: DB) => {
       {
         id: generateUID(), type: EdgeType.IsLanguage,
         sourceId: wordIdMap[word], targetId: languageIdMap[lang],
+        createdAt: Date.now(),
       },
       {
         id: generateUID(), type: EdgeType.IsPOS,
         sourceId: wordIdMap[word], targetId: POSIdMap[pos],
+        createdAt: Date.now(),
       },
       ...means.flatMap((meaning) => {
         return [
           {
             id: generateUID(), type: EdgeType.Means,
             sourceId: wordIdMap[word], targetId: wordIdMap[meaning],
+            createdAt: Date.now(),
           },
           {
             id: generateUID(), type: EdgeType.Means,
             sourceId: wordIdMap[meaning], targetId: wordIdMap[word],
+            createdAt: Date.now(),
           },
         ];
       }),

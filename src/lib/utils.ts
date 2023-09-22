@@ -1,9 +1,15 @@
+import type { TargetNode } from '@/lib/graph-db';
+
 export class TwoWayMap extends Map<string, string> {
   constructor(list: [string, string][]) {
     const revList = list.map(([a, b]) => [b, a]) as [string, string][];
     super([...list, ...revList]);
   }
 }
+
+export const nodeSortFn = (a: Pick<TargetNode, 'edgeCreatedAt'>, b: Pick<TargetNode, 'edgeCreatedAt'>) => {
+  return a.edgeCreatedAt - b.edgeCreatedAt;
+};
 
 export const generateUID = () => crypto.randomUUID().slice(0, 8);
 
