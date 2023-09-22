@@ -54,7 +54,7 @@
 <div class='flex flex-col gap-2 my-2'>
   <span>{label}</span>
   <Tags bind:tags={internalSelectedTags}
-    placeholder={'Add language...'}
+    placeholder={`Add ${label.toLowerCase()}...`}
     autoComplete={remainChoices} minChars={0}
     autoCompleteKey={'text'} autoCompleteShowKey={'text'}
     onlyAutocomplete onlyUnique

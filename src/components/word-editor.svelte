@@ -98,7 +98,7 @@
     />
 
     <TagsInput selectedTags={meansSelected}
-      label={'Means'} tagType={NodeType.Word}
+      label={'Meaning'} tagType={NodeType.Word}
       addingCallback={() => {}}
       deletingCallback={() => {}}
     />
