@@ -56,15 +56,21 @@
     }
   };
 
-  const deleteWordHandler = async () => {
-    let isConfirm = confirm('All connection and word will be deleted, confirm?');
-    if (isConfirm) {
-      const toDeleteNodeId = ($selectedNode?.id ?? '') as string;
-      selectedNode.set(null);
-      graphDB.deleteNodeAndConnectedEdges(toDeleteNodeId);
-      graphDB.deleteWordNoteById(toDeleteNodeId);
-    }
+  let confirmDeleteDialog: HTMLDialogElement;
+  const openConfirmDialogHandler = () => {
+    confirmDeleteDialog.showModal();
   };
+  const closeConfirmDialogHandler = () => {
+    confirmDeleteDialog.close();
+  };
+  const deleteWordHandler = async () => {
+    const toDeleteNodeId = ($selectedNode?.id ?? '') as string;
+    selectedNode.set(null);
+    await graphDB.deleteNodeAndConnectedEdges(toDeleteNodeId);
+    await graphDB.deleteWordNoteById(toDeleteNodeId);
+    closeConfirmDialogHandler();
+  };
+
 
 </script>
 
@@ -99,16 +105,28 @@
 
     <WordNote />
 
-    {#if currentEditorState == EditorState.WordSelected}
-      <div class="flex">
-        <button class="btn btn-error" on:click={deleteWordHandler}>
-          Delete
-        </button>
-      </div>
-    {/if}
+    <div class="flex">
+      <button class="btn btn-error" on:click={openConfirmDialogHandler}>
+        Delete
+      </button>
+    </div>
   {/if}
 
 </div>
+
+<dialog id="confirm-delete-dialog" class="modal" bind:this={confirmDeleteDialog}>
+  <div class="modal-box">
+    <h3 class="font-bold text-lg">Warning!</h3>
+    <p class="py-4 text-md">All connection and word will be deleted, confirm?</p>
+    <div class="modal-action">
+      <button class="btn" on:click={closeConfirmDialogHandler}>Cancel</button>
+      <button class="btn btn-error" on:click={deleteWordHandler}>Confirm</button>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
 
 <!-- svelte-ignore css-unused-selector -->
 <style lang='postcss'>

@@ -26,7 +26,7 @@
       .width(ev.clientWidth)
       .height(ev.clientHeight)
       .zoomToFit(500, 20);
-  }, 250);
+  }, 100);
 
   let graphDrawer: ForceGraphInstance;
   let zoomLevel = 0;
@@ -41,9 +41,7 @@
     zoomLevel -= k;
     graphDrawer.zoom(zoomLevel, 500);
   };
-  const recenter = () => {
-    graphDrawer.zoomToFit(500, 20);
-  };
+  const recenter = () => graphDrawer.zoomToFit(500, 20);
 
   const highlightNodes = new Set<string>();
   const highlightEdges = new Set<string>();
