@@ -1,3 +1,9 @@
+<script lang='ts' context='module'>
+  export interface TagChoices extends Node {
+    showText: string;
+  }
+</script>
+
 <script lang='ts'>
   // @ts-ignore
   import Tags from 'svelte-tags-input';
@@ -6,13 +12,20 @@
   import { graphDB } from '@/lib/graph-db';
   import type { Node, TargetNode } from '@/lib/graph-db';
   import type { NodeType } from '@/utils/const';
+    import { normalizeWord } from '@/lib/utils';
+
+  /** if isAllowCreate, generate new node created instead of select the exist node */
+  export let isAllowCreate = false;
+
+  /** if isAllowCreate, the choice function must be provided */
+  export let choiceFunction: (_queryText: string) => Node[] = (_) => [];
 
   export let label = '';
   export let tagType: NodeType;
   export let selectedTags: TargetNode[] = [];
 
-  export let addingCallback: CallableFunction = (_arg1: Node) => {};
-  export let deletingCallback: CallableFunction = (_arg1: TargetNode) => {};
+  export let addingCallback: (_arg0: Node) => void = (_) => {};
+  export let deletingCallback: (_arg1: TargetNode) => void = (_arg1: TargetNode) => {};
 
   const proxyHandler: ProxyHandler<any> = {
     get: function(target: any, prop: any) {
@@ -41,13 +54,35 @@
       return val;
     }
   };
-  $: internalSelectedTags = new Proxy<TargetNode[]>(selectedTags, proxyHandler);
+  $: internalSelectedTags = new Proxy<TagChoices[]>(
+    selectedTags.map(tag => ({ ...tag, showText: tag.text })),
+    proxyHandler
+  );
 
   const getAllTags = async () => graphDB.getAllNodesByType(tagType);
   let allTags: Node[] = [];
-  onMount(async () => allTags = await getAllTags());
+  onMount(async () => {
+    if (!isAllowCreate) allTags = await getAllTags();
+  });
   $: selectedTagsId = new Set(selectedTags.map(node => node.id));
-  $: remainChoices = allTags.filter(node => !selectedTagsId.has(node.id));
+  $: remainChoices = allTags
+    .filter(node => !selectedTagsId.has(node.id))
+    .map<TagChoices>(node => ({ ...node, showText: node.text }));
+
+  const internalAutoCompleteFn = (queryText: string) => {
+    const normalizedQueryText = normalizeWord(queryText);
+
+    const result = choiceFunction(queryText)
+      .map<TagChoices>(choice => ({...choice, showText: choice.text}));
+
+    if (!result.some(res => res.text == normalizedQueryText)) {
+      result.push({
+        id: '', type: '', text: normalizedQueryText, createdAt: Date.now(),
+        showText: `Add '${normalizedQueryText}' and connect`
+      });
+    }
+    return result;
+  };
 
 </script>
 
@@ -55,8 +90,13 @@
   <span>{label}</span>
   <Tags bind:tags={internalSelectedTags}
     placeholder={`Add ${label.toLowerCase()}...`}
-    autoComplete={remainChoices} minChars={0}
-    autoCompleteKey={'text'} autoCompleteShowKey={'text'}
+    autoComplete={
+      isAllowCreate
+        ? internalAutoCompleteFn
+        : remainChoices
+    }
+    minChars={isAllowCreate ? 1 : 0}
+    autoCompleteKey='showText' autoCompleteShowKey='showText'
     onlyAutocomplete onlyUnique
   />
 </div>

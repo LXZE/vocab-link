@@ -29,3 +29,7 @@ export const getModifierKey = () => {
     return '⌘';
   return '^';
 };
+
+export const normalizeWord = (word: string) => {
+  return word.trim().toLowerCase();
+};

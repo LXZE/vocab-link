@@ -1,7 +1,46 @@
 import { writable, derived } from 'svelte/store';
-import type { CustomNodeObject } from '@/lib/graph-db';
+import { liveQuery } from 'dexie';
+import fuzzysort from 'fuzzysort';
 
-export const selectedNode = writable<CustomNodeObject | null>(null);
+import { NodeType } from '@/utils/const';
+import { graphDB } from '@/lib/graph-db';
+import type { CustomNodeObject, Node } from '@/lib/graph-db';
+import type Fuzzysort from 'fuzzysort';
+
+export const selectedNode = writable<CustomNodeObject | undefined>();
+export const selectedNodeId = derived(selectedNode, (currentNode) => {
+  if (!currentNode) return;
+  return currentNode.id as string;
+});
+
+interface IndexedNode extends Node {
+  textPrepared: Fuzzysort.Prepared;
+}
+
+export let allWordIndex: IndexedNode[] = [];
+const allWordNodesObservable = liveQuery(async () => await graphDB.getAllNodesByType(NodeType.Word));
+allWordNodesObservable.subscribe(async (nodes) => {
+  allWordIndex = nodes.map((node) => ({
+    ...node,
+    textPrepared: fuzzysort.prepare(node.text)
+  }));
+});
+
+export type SearchOption = {
+  limit?: number
+  excludeWordsId?: string[]
+}
+const defaultOption: SearchOption = {
+  limit: 10,
+  excludeWordsId: [],
+};
+export const queryNodeByText = (queryText: string, givenOptions: SearchOption) => {
+  const { limit, excludeWordsId } = { ...defaultOption, ...givenOptions };
+  const existIds = new Set(excludeWordsId);
+  const filtererIndex = allWordIndex.filter(word => !existIds.has(word.id));
+  return fuzzysort.go(queryText, filtererIndex, { key: 'textPrepared', limit })
+    .map(res => res.obj);
+};
 
 const PANE_SIZE_KEY = 'leftPaneSize';
 const paneSize = localStorage.getItem(PANE_SIZE_KEY) ?? '50';

@@ -66,14 +66,14 @@
     graphDrawer
       .onZoom(({ k }) => zoomLevel = k)
       .onBackgroundClick(() => {
-        $selectedNode = null;
+        selectedNode.set(undefined);
       })
       .linkWidth((link: CustomLinkObject) => highlightEdges.has(link.id!) ? 5 : 1)
       .linkDirectionalParticleWidth((link: CustomLinkObject) => highlightEdges.has(link.id!) ? 4 : 0)
       .linkDirectionalParticleColor('red')
       .linkDirectionalParticles(1)
       .onNodeClick((node: CustomNodeObject) => {
-        $selectedNode = node;
+        selectedNode.set(node);
       })
       .nodePointerAreaPaint((node: CustomNodeObject, color, ctx) => {
         ctx.fillStyle = color;

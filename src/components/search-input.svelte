@@ -1,30 +1,16 @@
 <script lang='ts'>
   import { debounce } from 'lodash';
-  import { liveQuery } from 'dexie';
-  import fuzzysort from 'fuzzysort';
-  import type Fuzzysort from 'fuzzysort';
 
   import Icon from '@iconify/svelte';
   import IconSearch from '@iconify/icons-material-symbols/search';
   import IconClose from '@iconify/icons-material-symbols/close';
 
   import { graphDB, type Node } from '@/lib/graph-db';
-  import { selectedNode } from '@/lib/store';
-  import { getAgentSystem, getModifierKey } from '@/lib/utils';
+  import { selectedNode, queryNodeByText } from '@/lib/store';
+  import { getAgentSystem, getModifierKey, normalizeWord } from '@/lib/utils';
   import { NodeType } from '@/utils/const';
 
   const CANDIDATE_LIMIT = 10;
-
-  interface IndexedNode extends Node {
-    textPrepared: Fuzzysort.Prepared;
-  }
-
-  let allWordIndex: IndexedNode[];
-  const allWordNodesObservable = liveQuery(async () => await graphDB.getAllNodesByType(NodeType.Word));
-  allWordNodesObservable.subscribe(async (nodes) => {
-    allWordIndex = nodes.map((node) => ({ ...node, textPrepared: fuzzysort.prepare(node.text) }));
-  });
-
 
   let searchTextInputElem: HTMLInputElement;
   let isSearchFocused: boolean;
@@ -32,13 +18,17 @@
   let searchCandidateIndex = 0;
   let searchResultNodes: Node[] = [];
 
-  const searchNodesByText = debounce(async (queryText: string) => {
-    const result = fuzzysort.go(queryText, allWordIndex, { key: 'text', limit: CANDIDATE_LIMIT });
-    searchResultNodes = result.map(res => res.obj);
+  const searchNodesByText = debounce((queryText: string) => {
+    const normalizedQuery = normalizeWord(queryText);
+    if (!normalizedQuery) {
+      searchResultNodes = [];
+      return;
+    }
+    searchResultNodes = queryNodeByText(normalizedQuery, { limit: CANDIDATE_LIMIT });
     // if no exact match then suggest to add a new word.
-    if (queryText.trim().length != 0 && !result.some(res => res.obj.text == searchText)) {
+    if (normalizedQuery.length > 0 && !searchResultNodes.some(res => res.text == searchText)) {
       searchResultNodes = [...searchResultNodes, {
-        id: '', type: '', text: searchText, createdAt: Date.now(),
+        id: '', type: '', text: normalizedQuery, createdAt: Date.now(),
       }];
     }
   }, 100, { trailing: true });
@@ -55,7 +45,7 @@
     if (selectedResult && selectedResult.id != '') {
       selectedNode.set(selectedResult);
     } else if (selectedResult.id == '') {
-      const newNode = await graphDB.createNewNode(NodeType.Word, searchText.trim());
+      const newNode = await graphDB.createNewNode(NodeType.Word, normalizeWord(searchText));
       selectedNode.set(newNode);
     }
     searchText = '';

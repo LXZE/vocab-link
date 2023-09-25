@@ -1,11 +1,11 @@
 <script lang='ts'>
   import { debounce } from 'lodash';
 
-  import { selectedNode } from '@/lib/store';
+  import { selectedNode, selectedNodeId } from '@/lib/store';
   import { graphDB } from '@/lib/graph-db';
 
   const setWordNote = async () => {
-    wordNote = await graphDB.getWordNoteById($selectedNode?.id as string);
+    wordNote = await graphDB.getWordNoteById($selectedNodeId);
   };
   let wordNote: string = '';
   $: wordNote, updateWordNoteHandler();
@@ -15,7 +15,7 @@
     await graphDB.updateWordNoteById(nodeId, note);
   }, 200, { trailing: true, maxWait: 500 });
   const updateWordNoteHandler = () => {
-    if ($selectedNode) updateWordNote($selectedNode.id as string, wordNote);
+    if ($selectedNodeId) updateWordNote($selectedNodeId, wordNote);
   };
 
 </script>
