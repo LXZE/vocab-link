@@ -5,54 +5,59 @@
 </script>
 
 <script lang='ts'>
+  import { onMount } from 'svelte';
   import Icon from '@iconify/svelte';
   import IconClose from '@iconify/icons-material-symbols/close';
 
-  import { onMount } from 'svelte';
-
+  import { selectedNode } from '@/lib/store';
   import { graphDB } from '@/lib/graph-db';
   import type { Node, TargetNode } from '@/lib/graph-db';
   import { NodeType } from '@/utils/const';
   import { normalizeWord } from '@/lib/utils';
-  import { selectedNode } from '@/lib/store';
 
-  /** if isAllowCreate, generate new node created instead of select the exist node */
-  export let isAllowCreate = false;
-
-  /** make tag can work as button */
-  export let isAllowTagClick = false;
-
+  /** if true, allow component to generate new node instead of select the exist node */
+  export let allowCreateNode = false;
+  export let allowTagClick = false;
 
   /** if isAllowCreate, the choice function must be provided */
   export let choiceFunction: (_queryText: string) => Promise<Node[]> = async (_) => [];
 
-  export let label = '';
-  export let autoCompleteKey = 'showText';
+  export let inputLabel = '';
+  export let autoCompleteObjectKey = 'showText';
+  export let minimumChars = 1;
   export let tagType: NodeType;
   export let selectedTags: TargetNode[] = [];
-  
+
   export let addingCallback: (_arg0: Node) => void = (_) => {};
   export let deletingCallback: (_arg1: TargetNode) => void = (_arg1: TargetNode) => {};
-  
+
   $: internalSelectedTags = selectedTags.map(tag => ({ ...tag, showText: tag.text }));
-  
-  const getAllTags = async () => graphDB.getAllNodesByType(tagType);
+
+  let tagInput = '';
+  let selectedChoiceIndex = 0;
+  $: tagInput, selectedChoiceIndex = 0; // every time tag input change, select choice 0 as default
+
+  // non word candidate choices
   let allTags: Node[] = [];
   onMount(async () => {
-    if (!isAllowCreate) allTags = await getAllTags();
+    if (!allowCreateNode) allTags = await graphDB.getAllNodesByType(tagType);
   });
-  $: selectedTagsId = new Set(selectedTags.map(node => node.id));
+  $: selectedTagsSet = new Set(internalSelectedTags.map(node => node.id));
   $: remainChoices = allTags
-    .filter(node => !selectedTagsId.has(node.id))
+    .filter(node => !selectedTagsSet.has(node.id)) // filter only non selected
     .map<TagChoices>(node => ({ ...node, showText: node.text }));
 
-  const internalAutoCompleteFn = async (queryText: string): Promise<Node[]> => {
+  // word candidate choices
+  const internalAutoCompleteFn = async (queryText: string): Promise<TagChoices[]> => {
     const normalizedQueryText = normalizeWord(queryText);
 
     const result = (await choiceFunction(queryText))
       .map<TagChoices>(choice => ({...choice, showText: choice.text}));
 
-    if (normalizedQueryText.length > 0 && !result.some(res => res.text == normalizedQueryText)) {
+    if (allowCreateNode && // allow create new word
+      normalizedQueryText.length > 0 && // query text is not empty string
+      !result.some(res => res.text == normalizedQueryText) // no query text in choices
+    ) {
       result.push({
         id: '', type: '', text: normalizedQueryText, createdAt: Date.now(),
         showText: `Add '${normalizedQueryText}' and connect`
@@ -61,121 +66,164 @@
     return result;
   };
 
-  // todo: move this to parent
-  let tagInput = '';
-  let selectedChoiceIndex = 0;
+
+  let candidateChoices: TagChoices[] = [];
+  const setCandidateChoices = async () => {
+    candidateChoices = [];
+    if (tagInput.length < minimumChars) return;
+    if (allowCreateNode) {
+      candidateChoices = await internalAutoCompleteFn(tagInput);
+    } else {
+      candidateChoices = remainChoices
+        .filter(choice => choice.text.toLowerCase().includes(tagInput.toLowerCase()));
+    }
+  };
+  $: (tagInput, internalSelectedTags), setCandidateChoices();
+
 
   const tagClickHandler = (tag: TagChoices) => {
-    // if (tagType == NodeType.Word) selectedNode.set(tag);
-    // internalSelectedTags.push(tag);
-    // internalSelectedTags = internalSelectedTags;
+    if (tagType == NodeType.Word) selectedNode.set(tag);
   };
-  $: tagInput, selectedChoiceIndex = 0;
-  const addTag = () => {
-    // addingCallback();
-    // normalizeWord(tagInput);
-    // if (tagInput !== '') {
-    //   tags.push(normalizeWord(tagInput));
-    //   tags = [...tags, normalizeWord(tagInput)];
-    //   tagInput = '';
-    // }
+  const addTag = (idx: number) => {
+    const selectedTag = candidateChoices[idx];
+    if (selectedTag) {
+      addingCallback(selectedTag);
+    }
+    tagInput = '';
+    internalSelectedTags = internalSelectedTags;
   };
   const popTag = () => {
+    const poppedTag = internalSelectedTags.pop();
+    if (!poppedTag) return;
+    deletingCallback(poppedTag);
+    internalSelectedTags = internalSelectedTags;
   };
   const removeTag = (index: number) => {
+    const [removedTag] = internalSelectedTags.splice(index, 1);
+    deletingCallback(removedTag);
+    internalSelectedTags = internalSelectedTags;
   };
+
+  // element and event
   let inputLayout: HTMLDivElement;
+  let inputElem: HTMLInputElement;
   let isFocused = false;
-  const onFocus = () => {
+  const focusHandler = () => {
     inputLayout.classList.add('focus');
+    setCandidateChoices();
     isFocused = true;
-  }
-  const onBlur = () => {
+  };
+  const blurHandler = () => {
     inputLayout.classList.remove('focus');
+    inputElem.blur();
+    candidateChoices = [];
     isFocused = false;
-  }
+  };
 
   const keydownHandler = (ev: KeyboardEvent) => {
-    console.log(ev.key);
+    // console.log(ev.key);
     switch(ev.key) {
-    case 'Enter': return addTag();
-    case 'Backspace': return popTag();
+    case 'Enter': return addTag(selectedChoiceIndex);
+    case 'Backspace': {
+      if (tagInput.length == 0) popTag();
+      return;
+    }
+    case 'Escape': return blurHandler();
+    case 'ArrowUp': {
+      ev.preventDefault();
+      selectedChoiceIndex =
+      selectedChoiceIndex == 0
+        ? candidateChoices.length - 1
+        : selectedChoiceIndex - 1;
+      return;
+    }
+    case 'ArrowDown': {
+      ev.preventDefault();
+      selectedChoiceIndex =
+      selectedChoiceIndex == candidateChoices.length - 1
+        ? 0
+        : selectedChoiceIndex + 1;
+      return;
+    }
     default: break;
     }
   };
 
 </script>
 
-<div class="flex flex-col gap-2 my-2">
-  <span>{label}</span>
+<div class="flex flex-col gap-2 my-2 relative">
+  <span>{inputLabel}</span>
   <div class='tags-input' bind:this={inputLayout}>
     <div class="tags">
       {#each internalSelectedTags as tag, idx}
-        <button class={`tag ${isAllowTagClick ? 'cursor-pointer' : 'cursor-auto'}`} on:click={() => {
-          if (isAllowTagClick) {
-            tagClickHandler(tag);
-          }
-        }} >
-          { Object.getOwnPropertyDescriptor(tag, autoCompleteKey)?.value }
-          <button on:click={() => removeTag(idx)}>
-            <span><Icon icon={IconClose} width="20" /></span>
-          </button>
+        <button class={`tag ${allowTagClick ? 'cursor-pointer' : 'cursor-auto'}`}
+          on:pointerdown={(ev) => {
+            ev.preventDefault();
+            if (allowTagClick) {
+              tagClickHandler(tag);
+            }
+          }}
+        >
+          { Object.getOwnPropertyDescriptor(tag, autoCompleteObjectKey)?.value }
+          <span on:pointerdown={(ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            removeTag(idx);
+          }}>
+            <Icon icon={IconClose} width="20" />
+          </span>
         </button>
       {/each}
     </div>
-    <input
+    <input bind:this={inputElem}
+      autocomplete="off"
       type="text"
-      placeholder={`Add ${label.toLowerCase()}...`}
+      placeholder={`Add ${inputLabel.toLowerCase()}...`}
       bind:value={tagInput}
       on:keydown={keydownHandler}
-      on:focus={onFocus}
-      on:blur={onBlur}
+      on:focus={focusHandler}
+      on:blur={blurHandler}
     />
   </div>
-  <!-- {#if isFocused && }
-    <ul class="
-        menu bg-base-200 w-full max-w-md rounded-box absolute top-16 z-10
-        {(searchText.length > 0) ? 'visible' : 'invisible'}
-      "
+  {#if isFocused && candidateChoices.length > 0}
+    <ul class="menu w-full max-w-md rounded-box bg-zinc-800"
     >
-        {#each searchResultNodes as node, idx}
-          <li><a href={null} class="{searchCandidateIndex == idx ? 'active' : ''}"
+        {#each candidateChoices as choice, idx}
+          <li><a href={null} class="hover:bg-zinc-600
+            {selectedChoiceIndex == idx ? 'bg-zinc-600' : ''}
+          "
             on:mousedown={(ev) => {
               // use mousedown instead of click to prevent blur behaviour
               ev.preventDefault();
-              selectWord();
+              addTag(idx);
             }}
-            on:mouseenter={() => searchCandidateIndex = idx}
+            on:mouseenter={() => selectedChoiceIndex = idx}
           >
-            {#if (node.type != '')}
-              {node.text}
-            {:else}
-              Add "{searchText}" as a new word
-            {/if}
+            {Object.getOwnPropertyDescriptor(choice, autoCompleteObjectKey)?.value}
           </a></li>
         {/each}
     </ul>
-  {/if} -->
+  {/if}
 </div>
 
 
 <style lang='postcss'>
 .tags-input {
-  @apply flex flex-wrap px-2 py-3 items-center content-center gap-2;
-  @apply border border-transparent rounded-xl;
+  @apply flex flex-wrap gap-2 items-center content-center p-2;
+  @apply border border-transparent rounded-sm;
   @apply bg-zinc-800;
 
   .tags {
-    @apply flex flex-wrap gap-2;
+    @apply flex flex-wrap gap-1;
   }
 
   .tag {
     @apply flex gap-2 py-1 px-2 items-center content-center;
-    @apply border border-zinc-700 rounded-xl;
+    @apply border border-zinc-600 rounded-sm;
   }
 
   input {
-    @apply flex border-none mx-1 flex-grow;
+    @apply mx-1 grow;
     background: unset;
   }
   input:focus {
@@ -183,6 +231,6 @@
   }
 }
 .tags-input.focus {
-  @apply border border-zinc-700;
+  @apply border border-zinc-600;
 }
 </style>

@@ -55,6 +55,11 @@
       const detailedMaybeNode = await graphDB.addDetailToNode(maybeNode as unknown as Node);
       (detailedMaybeNode.neighborsNodeId).forEach(nodeId => highlightNodes.add(nodeId));
       (detailedMaybeNode.connectedEdgeId).forEach(edgeId => highlightEdges.add(edgeId));
+      graphDrawer
+        .centerAt(maybeNode.x, maybeNode.y, 500);
+    }
+    else if (graphDrawer) {
+      graphDrawer.zoomToFit(500, 20);
     }
   });
 
@@ -72,7 +77,6 @@
       .linkDirectionalParticleWidth((link: CustomLinkObject) => highlightEdges.has(link.id!) ? 4 : 0)
       .linkDirectionalParticles(1)
       .linkDirectionalParticleColor('#000000')
-      .linkDirectionalParticleSpeed(0.02)
       .onNodeClick((node: CustomNodeObject) => {
         selectedNode.set(node);
       })

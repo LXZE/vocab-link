@@ -17,9 +17,6 @@ dependencies:
   lodash:
     specifier: ^4.17.21
     version: 4.17.21
-  svelte-tags-input:
-    specifier: ^5.0.0
-    version: 5.0.0
   svelte-watch-resize:
     specifier: ^1.0.3
     version: 1.0.3
@@ -79,9 +76,6 @@ devDependencies:
   tailwindcss:
     specifier: ^3.3.3
     version: 3.3.3
-  tslib:
-    specifier: ^2.6.0
-    version: 2.6.2
   typescript:
     specifier: ^5.0.2
     version: 5.2.2
@@ -2174,10 +2168,6 @@ packages:
       svelte: 4.2.0
     dev: true
 
-  /svelte-tags-input@5.0.0:
-    resolution: {integrity: sha512-lH0rkSdVcurCEnJBkHG9gTQfpz0gsQmVBzA+TQqSLL1/A0okRsz8lZJzVC20d6Eufkr24b5zHkYzQmrbIaqS/w==}
-    dev: false
-
   /svelte-watch-resize@1.0.3:
     resolution: {integrity: sha512-ktqTnkdqfx4YRqeMJcX1jeSnQ2kJUVlj4/rLdaLbhM+RrxN87vS2EZ0cxlGZ7eXV86Ef05Q3dVqEiR+12PeoIw==}
     dependencies:
@@ -2273,10 +2263,6 @@ packages:
 
   /ts-interface-checker@0.1.13:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
-    dev: true
-
-  /tslib@2.6.2:
-    resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
     dev: true
 
   /type-check@0.4.0:

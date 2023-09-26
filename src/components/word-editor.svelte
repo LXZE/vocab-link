@@ -56,7 +56,7 @@
       .map(node => ({ ...node, showText: node.text }));
   };
 
-  const addWordHandler = async (targetNode: Node | TargetNode) => {
+  const addWordConnHandler = async (targetNode: Node | TargetNode) => {
     if ($selectedNodeId) {
       if (targetNode.id == '') {
         const newWord = await graphDB.createNewNode(NodeType.Word, targetNode.text);
@@ -70,6 +70,15 @@
           graphDB.createNewEdge(EdgeType.Means, targetNode.id, $selectedNodeId),
         ]);
       }
+      $selectedNode = $selectedNode; // trigger graph
+    }
+  };
+  const deleteWordConnHandler = async (removedNode: Node) => {
+    if ($selectedNodeId) {
+      await Promise.all([
+        graphDB.deleteEdgeByNodesId($selectedNodeId, removedNode.id),
+        graphDB.deleteEdgeByNodesId(removedNode.id, $selectedNodeId),
+      ]);
       $selectedNode = $selectedNode; // trigger graph
     }
   };
@@ -91,24 +100,24 @@
 
   {#if currentEditorState == EditorState.WordSelected}
     <TagsInput bind:selectedTags={languageSelected}
-      label={'Language'} tagType={NodeType.Language}
+      inputLabel={'Language'} tagType={NodeType.Language}
       addingCallback={createAddTagHandler(EdgeType.IsLanguage)}
       deletingCallback={deleteTagHandler}
     />
 
     <TagsInput selectedTags={POSSelected}
-      label={'Part of speech'} tagType={NodeType.POS}
+      inputLabel={'Part of speech'} tagType={NodeType.POS}
       addingCallback={createAddTagHandler(EdgeType.IsPOS)}
       deletingCallback={deleteTagHandler}
     />
 
     <TagsInput selectedTags={meansSelected}
-      isAllowCreate
+      inputLabel={'Meaning'} tagType={NodeType.Word}
+      allowCreateNode allowTagClick
       choiceFunction={choiceFn}
-      label={'Meaning'} tagType={NodeType.Word}
-      addingCallback={addWordHandler}
-      deletingCallback={deleteTagHandler}
-      isAllowTagClick
+      addingCallback={addWordConnHandler}
+      deletingCallback={deleteWordConnHandler}
+      minimumChars={0}
     />
 
     <WordNote />

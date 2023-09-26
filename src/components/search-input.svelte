@@ -109,7 +109,7 @@
         </button>
       </div>
   </div>
-  {#if isSearchFocused}
+  {#if isSearchFocused && searchResultNodes.length > 0}
     <ul class="
         menu bg-base-200 w-full max-w-md rounded-box absolute top-16 z-10
         {(searchText.length > 0) ? 'visible' : 'invisible'}

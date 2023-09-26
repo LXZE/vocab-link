@@ -242,6 +242,11 @@ export class GraphDB {
   async deleteEdge(edgeId: string): Promise<void> {
     return this.db.edges.delete(edgeId);
   }
+  async deleteEdgeByNodesId(sourceId: string, targetId: string) {
+    return this.db.edges
+      .where({ sourceId, targetId })
+      .delete();
+  }
 
   async getWordNoteById(nodeId?: string): Promise<string> {
     if (!nodeId) return '';
