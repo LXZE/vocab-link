@@ -22,5 +22,8 @@
 
 <div class='flex flex-col gap-2 my-2'>
   <span>Note</span>
-  <input type="text" bind:value={wordNote} />
+  <textarea class="textarea"
+    rows={2}
+    bind:value={wordNote}
+  />
 </div>

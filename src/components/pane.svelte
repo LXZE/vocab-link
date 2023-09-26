@@ -48,7 +48,7 @@
         <button class="btn" on:click={clickInitDB}>Init db</button>
         <button class="btn" on:click={clickClearDB}>Nuke db</button>
       </div>
-      <div class="flex flex-col p-2 items-stretch">
+      <div class="flex flex-col p-2 gap-2 items-stretch">
         <SearchInput />
         <WordEditor />
       </div>
