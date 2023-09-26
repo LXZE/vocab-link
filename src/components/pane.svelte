@@ -8,13 +8,6 @@
 
   import { leftPaneSize, rightPaneSize } from '@/lib/store';
 
-  import { graphDB } from '@/lib/graph-db';
-  import { init_db, clear_db } from '@/utils/db-action';
-
-  const clickInitDB = () => init_db(graphDB.db);
-  const clickClearDB = () => clear_db(graphDB.db);
-
-  let pane;
   let lPaneSize = get(leftPaneSize);
   $: lPaneSize, leftPaneSize.set(lPaneSize);
   let rPaneSize = get(rightPaneSize);
@@ -39,15 +32,10 @@
 
 <Splitpanes dblClickSplitter={false} theme='custom-theme'
   on:splitter-click={resetPaneSize}
-  bind:this={pane}
 >
 	<Pane minSize={30} bind:size={lPaneSize}>
     <div class="flex flex-col p-4 gap-4">
       <span class='w-full text-center p-2 text-xl'>Word Editor</span>
-      <div class="flex justify-center">
-        <button class="btn" on:click={clickInitDB}>Init db</button>
-        <button class="btn" on:click={clickClearDB}>Nuke db</button>
-      </div>
       <div class="flex flex-col p-2 gap-2 items-stretch">
         <SearchInput />
         <WordEditor />

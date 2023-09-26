@@ -44,12 +44,12 @@
 
 </script>
 
-<div class="flex gap-2 items-baseline justify-between max-w-md">
+<div class="flex gap-2 items-baseline justify-between max-w-md p-2 grow">
 
   {#if isEditWord}
     <input type="text" class="input input-bordered max-w-xs" bind:value={editWord} />
   {:else}
-    <span>{editorStatusText}</span>
+    <span class='text-md'>{editorStatusText}</span>
   {/if}
 
   <div class="flex gap-2">
@@ -59,13 +59,13 @@
         {#if !isEditWord}
           <div class="tooltip" data-tip="Edit word">
             <button class="btn btn-square" on:click={openEditWordHandler}>
-              <Icon icon={editIcon} />
+              <Icon icon={editIcon} width={20} />
             </button>
           </div>
         {:else}
           <div class="tooltip" data-tip="Save word">
             <button class="btn btn-square" on:click={saveEditWordHandler}>
-              <Icon icon={saveIcon} />
+              <Icon icon={saveIcon} width={20} />
             </button>
           </div>
         {/if}
@@ -73,7 +73,7 @@
 
       <div class="tooltip" data-tip="Close">
         <button class="btn btn-square" on:click={closeHandler}>
-          <Icon icon={closeIcon} />
+          <Icon icon={closeIcon} width={20} />
         </button>
       </div>
     {/if}

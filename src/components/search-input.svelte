@@ -88,8 +88,8 @@
 </script>
 
 
-<form id="search-word-container" class="flex flex-col gap-4 relative">
-  <div class="flex relative items-center justify-center max-w-md">
+<form id="search-word-container" class="relative flex justify-center">
+  <div class="flex relative items-center justify-center max-w-md grow">
       <span class="absolute left-0 items-center pl-2">
         <Icon icon={IconSearch} width="20" />
       </span>
@@ -111,7 +111,7 @@
   </div>
   {#if isSearchFocused && searchResultNodes.length > 0}
     <ul class="
-        menu bg-base-200 w-full max-w-md rounded-box absolute top-16 z-10
+        menu bg-base-200 w-full max-w-md absolute top-14 z-10
         {(searchText.length > 0) ? 'visible' : 'invisible'}
       "
     >

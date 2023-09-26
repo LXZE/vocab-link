@@ -93,11 +93,14 @@
 
 </script>
 
-<div class="flex flex-col override-default-tags">
+<div class="w-full flex justify-center">
   <EditorLabel
     currentEditorState={currentEditorState}
   />
+</div>
 
+
+<div class="flex flex-col">
   {#if currentEditorState == EditorState.WordSelected}
     <TagsInput bind:selectedTags={languageSelected}
       inputLabel={'Language'} tagType={NodeType.Language}
@@ -134,25 +137,3 @@
 <ConfirmDialog bind:open={openDialog}
   onConfirmCallback={deleteWordHandler}
 />
-
-
-<!-- svelte-ignore css-unused-selector -->
-<style lang='postcss'>
-
-.override-default-tags {
-  :global(.svelte-tags-input-layout) {
-    @apply bg-zinc-800 border-zinc-700 !important;
-  }
-  :global(.svelte-tags-input-layout.focus) {
-    @apply border-zinc-500 !important;
-  }
-  :global(.svelte-tags-input-tag) {
-    @apply badge badge-lg !important;
-    /* @apply bg-zinc-600 !important; */
-  }
-  :global(.svelte-tags-input-matchs-parent li){
-    @apply bg-zinc-800;
-  }
-}
-
-</style>

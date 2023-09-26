@@ -24,8 +24,12 @@
   const handleResized = debounce((ev: HTMLElement) => {
     graphDrawer
       .width(ev.clientWidth)
-      .height(ev.clientHeight)
-      .zoomToFit(500, 20);
+      .height(ev.clientHeight);
+    if ($selectedNode) {
+      graphDrawer.centerAt($selectedNode.x, $selectedNode.y, 500);
+    } else {
+      graphDrawer.zoomToFit(500, 20);
+    }
   }, 100);
 
   let graphDrawer: ForceGraphInstance;
@@ -55,11 +59,17 @@
       const detailedMaybeNode = await graphDB.addDetailToNode(maybeNode as unknown as Node);
       (detailedMaybeNode.neighborsNodeId).forEach(nodeId => highlightNodes.add(nodeId));
       (detailedMaybeNode.connectedEdgeId).forEach(edgeId => highlightEdges.add(edgeId));
+
+      const existNodeData = graphDrawer.graphData().nodes.find(node => node.id == maybeNode.id);
+      if (!existNodeData) return;
       graphDrawer
-        .centerAt(maybeNode.x, maybeNode.y, 500);
+        .centerAt(existNodeData.x, existNodeData.y, 500)
+        .zoomToFit(500, 50, (node: CustomNodeObject) => {
+          return highlightNodes.has(node.id! as string) || node.id == maybeNode.id;
+        });
     }
-    else if (graphDrawer) {
-      graphDrawer.zoomToFit(500, 20);
+    else if (graphDrawer != undefined) {
+      if (zoomLevel > 1) zoomOut(0.5);
     }
   });
 
@@ -151,15 +161,3 @@
   </div>
   <div id='canvas' bind:this={canvas} />
 </div>
-
-<dialog id="graph_modal" class:modal-open={isExpandGraph}>
-  <div class="modal-box w-11/12 max-w-5xl">
-    <h3 class="font-bold text-lg">Hello!</h3>
-    <p class="py-4">Click the button below to close</p>
-    <div class="modal-action">
-      <form method="dialog">
-        <button class="btn">Close</button>
-      </form>
-    </div>
-  </div>
-</dialog>
