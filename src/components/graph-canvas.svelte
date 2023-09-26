@@ -88,7 +88,11 @@
       const { nodes: previousNode, links: previousLink } = graphDrawer.graphData();
       const previousNodeData = new Map(previousNode.map((node: CustomNodeObject) => [node.id! as string, node]));
       const previousLinkData = new Map(previousLink.map((link: CustomLinkObject) => [link.id!, link]));
-      nodes = newNodes.map((node) => previousNodeData.get(node.id! as string) ?? node);
+      nodes = newNodes.map((node) => {
+        const newNode = previousNodeData.get(node.id! as string) ?? node;
+        newNode.text = node.text;
+        return newNode;
+      });
       links = newLinks.map((link) => previousLinkData.get(link.id! as string) ?? link);
       updateGraph();
     });

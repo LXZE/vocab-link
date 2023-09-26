@@ -26,9 +26,7 @@ export interface TargetNode extends Node {
 
 export interface NodeWithRelation extends Node {
   connectedEdgeId: string[]
-  connectedEdgesAmount: number
   neighborsNodeId: string[]
-  neighborsNodesAmount: number
 }
 
 export interface Edge {
@@ -84,6 +82,13 @@ export class GraphDB {
     this.db = db;
     this.isDirty = false;
     this.cache = new Map();
+  }
+
+  async getNodeFromId(nodeId: string) {
+    return this.db.nodes.get(nodeId);
+  }
+  async editNodeText(nodeId: string, text: string) {
+    return this.db.nodes.update(nodeId, { text });
   }
 
   marshalEdge(edge: Edge): CustomLinkObject {
@@ -143,19 +148,14 @@ export class GraphDB {
     const allConnectedEdges = await graphDB.getConnectedEdgesByNodeId(node.id);
     const extendedNode: NodeWithRelation = {...node,
       neighborsNodeId: [], connectedEdgeId: [],
-      neighborsNodesAmount: 0, connectedEdgesAmount: 0,
     };
     allConnectedEdges.forEach(edge => {
       if (edge.sourceId == node.id) {
         extendedNode.neighborsNodeId.push(edge.targetId);
         extendedNode.connectedEdgeId.push(edge.id);
-        extendedNode.neighborsNodesAmount += 1;
-        extendedNode.connectedEdgesAmount += 1;
       } else if (edge.targetId == node.id) {
         extendedNode.neighborsNodeId.push(edge.sourceId);
         extendedNode.connectedEdgeId.push(edge.id);
-        extendedNode.neighborsNodesAmount += 1;
-        extendedNode.connectedEdgesAmount += 1;
       }
     });
     return extendedNode;
@@ -166,21 +166,51 @@ export class GraphDB {
     const nodesMap = Object.fromEntries<NodeWithRelation>(
       nodes.map(node => [node.id, {...node,
         neighborsNodeId: [], connectedEdgeId: [],
-        neighborsNodesAmount: 0, connectedEdgesAmount: 0,
       }])
     );
     edges.forEach(edge => {
       nodesMap[edge.sourceId].neighborsNodeId.push(edge.targetId);
       nodesMap[edge.sourceId].connectedEdgeId.push(edge.id);
-      nodesMap[edge.sourceId].neighborsNodesAmount += 1;
-      nodesMap[edge.sourceId].connectedEdgesAmount += 1;
 
       nodesMap[edge.targetId].neighborsNodeId.push(edge.sourceId);
       nodesMap[edge.targetId].connectedEdgeId.push(edge.id);
-      nodesMap[edge.targetId].neighborsNodesAmount += 1;
-      nodesMap[edge.targetId].connectedEdgesAmount += 1;
     });
     return Object.values(nodesMap);
+  }
+
+  async getNeighborWords(nodeId: string): Promise<Node[]> {
+    const connectedEdgesId = (await this.getConnectedEdgesByNodeId(nodeId))
+      .flatMap(edge => [edge.sourceId, edge.targetId])
+      .filter(neighborNodeId => neighborNodeId != nodeId);
+
+    return await this.db.nodes
+      .where('id').anyOf(connectedEdgesId)
+      .and(node => node.type == NodeType.Word)
+      .toArray();
+  }
+
+  async getSecondDegreeWordNeighbors(nodeId: string): Promise<Node[]> {
+    const currentNode = await this.db.nodes.get(nodeId);
+    if (!currentNode) {
+      throw new Error('given node id not found');
+    }
+    const neighborWordsNode = await this.getNeighborWords(nodeId);
+    const neighborWordsSet = new Set(neighborWordsNode.map(node => node.id));
+
+    const secondDegreeNeighborWordsNode =
+      (await Promise.all(
+        neighborWordsNode.map(node => this.getNeighborWords(node.id))
+      ))
+        .flat()
+        .reduce((map: Map<string, Node>, node: Node) => {
+          if (node.id != nodeId // not current node
+            && !neighborWordsSet.has(node.id) // not connected node
+            && !map.has(node.id)) // not duplicated node
+            map.set(node.id, node);
+          return map;
+        }, new Map<string, Node>())
+        .values();
+    return Array.from(secondDegreeNeighborWordsNode);
   }
 
   async createNewNode(type: NodeType, text: string): Promise<Node> {

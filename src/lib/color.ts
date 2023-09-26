@@ -1,9 +1,16 @@
 import { NodeType, EdgeType } from '@/utils/const';
 
 export const graphNodeColors = new Map<string, string>([
-  [NodeType.Word, '#EFB495'],
-  [NodeType.Language, '#AEC3AE'],
-  [NodeType.POS, '#ADC4CE'],
+  [NodeType.Word, '#FFF6DC'],
+  [NodeType.Language, '#79AC78'],
+  [NodeType.POS, '#D2E0FB'],
+  [NodeType.Text, '#FFF6DC'],
+]);
+
+export const graphNodeHighlightColors = new Map<string, string>([
+  [NodeType.Word, '#FFC6AC'],
+  [NodeType.Language, '#618264'],
+  [NodeType.POS, '#8EACCD'],
   [NodeType.Text, '#FFF6DC'],
 ]);
 

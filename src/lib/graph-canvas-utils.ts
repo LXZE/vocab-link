@@ -1,9 +1,9 @@
 import { get } from 'svelte/store';
 import type { ForceGraphInstance } from 'force-graph';
 
-import { graphNodeColors, graphEdgeColors } from '@/lib/color';
+import { graphNodeColors, graphNodeHighlightColors, graphEdgeColors } from '@/lib/color';
 import type { CustomLinkObject, CustomNodeObject } from '@/lib/graph-db';
-import { selectedNode } from '@/lib/store';
+import { selectedNode, selectedNodeId } from '@/lib/store';
 
 import { EdgeType, twoWaysEdge } from '@/utils/const';
 
@@ -39,8 +39,8 @@ export const graphSetup = (graphInstance: ForceGraphInstance) => {
       ] as [number, number, number, number];
 
       // if selected, highligh node
-      if (get(selectedNode)?.id == node.id) {
-        ctx.fillStyle = 'red';
+      if (get(selectedNodeId) == node.id) {
+        ctx.fillStyle = graphNodeHighlightColors.get(node.type!) ?? 'red';
         ctx.fillRect(
           rectDimension[0] - SELECTED_PADDING,
           rectDimension[1] - SELECTED_PADDING,

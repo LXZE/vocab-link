@@ -1,13 +1,17 @@
 <script lang='ts'>
   import Icon from '@iconify/svelte';
   import closeIcon from '@iconify/icons-material-symbols/close';
+  import editIcon from '@iconify/icons-material-symbols/edit';
+  import saveIcon from '@iconify/icons-material-symbols/save';
 
-  import { selectedNode } from '@/lib/store';
+  import { selectedNode, selectedNodeId } from '@/lib/store';
   import { EditorState } from '@/utils/const';
+  import { graphDB } from '@/lib/graph-db';
 
   export let currentEditorState: EditorState;
 
   let editorStatusText: string;
+  let editWord: string = '';
   $: {
     switch(currentEditorState) {
     case EditorState.NoWordSelected:
@@ -20,13 +24,54 @@
     }
   }
 
+  let isEditWord = false;
+  const openEditWordHandler = () => {
+    editWord = $selectedNode?.text ?? '';
+    isEditWord = true;
+  };
+  const saveEditWordHandler = async () => {
+    if ($selectedNodeId) {
+      await graphDB.editNodeText($selectedNodeId, editWord);
+      selectedNode.set(await graphDB.getNodeFromId($selectedNodeId));
+    }
+    isEditWord = false;
+  };
+  const closeHandler = () => {
+    isEditWord = false;
+    selectedNode.set(undefined);
+  };
+
+
 </script>
 
-<div class="flex gap-2 p-2 items-baseline justify-between">
-  <span>{editorStatusText}</span>
-  {#if currentEditorState !== EditorState.NoWordSelected}
-    <button class="btn btn-square" on:click={() => selectedNode.set(undefined)}>
-      <Icon icon={closeIcon} />
-    </button>
+<div class="flex gap-2 items-baseline justify-between max-w-md">
+
+  {#if !isEditWord}
+    <span>{editorStatusText}</span>
+  {:else}
+    <input type="text" class="input input-bordered max-w-xs" bind:value={editWord} />
   {/if}
+
+  <div class="flex gap-2">
+    {#if currentEditorState !== EditorState.NoWordSelected}
+      {#if !isEditWord}
+        <div class="tooltip" data-tip="Edit word">
+          <button class="btn btn-square" on:click={openEditWordHandler}>
+            <Icon icon={editIcon} />
+          </button>
+        </div>
+      {:else}
+        <div class="tooltip" data-tip="Save word">
+          <button class="btn btn-square" on:click={saveEditWordHandler}>
+            <Icon icon={saveIcon} />
+          </button>
+        </div>
+      {/if}
+      <div class="tooltip" data-tip="Close">
+        <button class="btn btn-square" on:click={closeHandler}>
+          <Icon icon={closeIcon} />
+        </button>
+      </div>
+    {/if}
+  </div>
 </div>

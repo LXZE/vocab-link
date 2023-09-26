@@ -11,14 +11,15 @@
 
   import { graphDB } from '@/lib/graph-db';
   import type { Node, TargetNode } from '@/lib/graph-db';
-  import type { NodeType } from '@/utils/const';
-    import { normalizeWord } from '@/lib/utils';
+  import { NodeType } from '@/utils/const';
+  import { normalizeWord } from '@/lib/utils';
+  import { selectedNode } from '@/lib/store';
 
   /** if isAllowCreate, generate new node created instead of select the exist node */
   export let isAllowCreate = false;
 
   /** if isAllowCreate, the choice function must be provided */
-  export let choiceFunction: (_queryText: string) => Node[] = (_) => [];
+  export let choiceFunction: (_queryText: string) => Promise<Node[]> = async (_) => [];
 
   export let label = '';
   export let tagType: NodeType;
@@ -69,19 +70,23 @@
     .filter(node => !selectedTagsId.has(node.id))
     .map<TagChoices>(node => ({ ...node, showText: node.text }));
 
-  const internalAutoCompleteFn = (queryText: string) => {
+  const internalAutoCompleteFn = async (queryText: string): Promise<Node[]> => {
     const normalizedQueryText = normalizeWord(queryText);
 
-    const result = choiceFunction(queryText)
+    const result = (await choiceFunction(queryText))
       .map<TagChoices>(choice => ({...choice, showText: choice.text}));
 
-    if (!result.some(res => res.text == normalizedQueryText)) {
+    if (normalizedQueryText.length > 0 && !result.some(res => res.text == normalizedQueryText)) {
       result.push({
         id: '', type: '', text: normalizedQueryText, createdAt: Date.now(),
         showText: `Add '${normalizedQueryText}' and connect`
       });
     }
     return result;
+  };
+
+  const tagClickHandler = (tag: TagChoices) => {
+    if (tagType == NodeType.Word) selectedNode.set(tag);
   };
 
 </script>
@@ -95,8 +100,9 @@
         ? internalAutoCompleteFn
         : remainChoices
     }
-    minChars={isAllowCreate ? 1 : 0}
+    minChars={0}
     autoCompleteKey='showText' autoCompleteShowKey='showText'
     onlyAutocomplete onlyUnique
+    onTagClick={tagClickHandler}
   />
 </div>

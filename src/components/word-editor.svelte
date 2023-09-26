@@ -10,7 +10,7 @@
   import { NodeType, EditorState, EdgeType } from '@/utils/const';
   import { graphDB } from '@/lib/graph-db';
   import type { Node, CustomNodeObject, TargetNode } from '@/lib/graph-db';
-  import { nodeSortFn, normalizeWord } from '@/lib/utils';
+  import { nodeSortFn } from '@/lib/utils';
 
   const getEditorStatus = (node?: CustomNodeObject): EditorState => {
     if (!node) return EditorState.NoWordSelected;
@@ -42,8 +42,11 @@
     }
   };
 
-  const choiceFn = (queryText: string): Node[] => {
-    if (!queryText) return [];
+  const choiceFn = async (queryText: string): Promise<Node[]> => {
+    if (queryText == '' && $selectedNodeId) {
+      // if no query text then return connected nodes' neighbor for suggestion
+      return await graphDB.getSecondDegreeWordNeighbors($selectedNodeId);
+    }
 
     return queryNodeByText(queryText, {
       limit: 10,
@@ -53,7 +56,6 @@
       .map(node => ({ ...node, showText: node.text }));
   };
 
-  const addExistWord = createAddTagHandler(EdgeType.Means);
   const addWordHandler = async (targetNode: Node | TargetNode) => {
     if ($selectedNodeId) {
       if (targetNode.id == '') {
@@ -63,7 +65,10 @@
           graphDB.createNewEdge(EdgeType.Means, newWord.id, $selectedNodeId),
         ]);
       } else {
-        await addExistWord(targetNode);
+        await Promise.all([
+          graphDB.createNewEdge(EdgeType.Means, $selectedNodeId, targetNode.id),
+          graphDB.createNewEdge(EdgeType.Means, targetNode.id, $selectedNodeId),
+        ]);
       }
       $selectedNode = $selectedNode; // trigger graph
     }
