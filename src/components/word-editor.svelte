@@ -108,6 +108,7 @@
       label={'Meaning'} tagType={NodeType.Word}
       addingCallback={addWordHandler}
       deletingCallback={deleteTagHandler}
+      isAllowTagClick
     />
 
     <WordNote />

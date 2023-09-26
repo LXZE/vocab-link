@@ -5,8 +5,9 @@
 </script>
 
 <script lang='ts'>
-  // @ts-ignore
-  import Tags from 'svelte-tags-input';
+  import Icon from '@iconify/svelte';
+  import IconClose from '@iconify/icons-material-symbols/close';
+
   import { onMount } from 'svelte';
 
   import { graphDB } from '@/lib/graph-db';
@@ -18,48 +19,23 @@
   /** if isAllowCreate, generate new node created instead of select the exist node */
   export let isAllowCreate = false;
 
+  /** make tag can work as button */
+  export let isAllowTagClick = false;
+
+
   /** if isAllowCreate, the choice function must be provided */
   export let choiceFunction: (_queryText: string) => Promise<Node[]> = async (_) => [];
 
   export let label = '';
+  export let autoCompleteKey = 'showText';
   export let tagType: NodeType;
   export let selectedTags: TargetNode[] = [];
-
+  
   export let addingCallback: (_arg0: Node) => void = (_) => {};
   export let deletingCallback: (_arg1: TargetNode) => void = (_arg1: TargetNode) => {};
-
-  const proxyHandler: ProxyHandler<any> = {
-    get: function(target: any, prop: any) {
-      const val: CallableFunction = target[prop];
-      if (typeof val === 'function') {
-        switch(prop) {
-        case 'push':
-          return function (node: Node) {
-            addingCallback(node);
-            return Array.prototype[prop].apply(target, arguments);
-          };
-        case 'splice':
-          return function (removedIndex: number) {
-            deletingCallback(selectedTags[removedIndex]);
-            return Array.prototype[prop].apply(target, arguments);
-          };
-        case 'pop':
-          return function () {
-            const result = Array.prototype[prop].apply(target, arguments);
-            deletingCallback(result);
-            return result;
-          };
-        default: return val.bind(target);
-        }
-      }
-      return val;
-    }
-  };
-  $: internalSelectedTags = new Proxy<TagChoices[]>(
-    selectedTags.map(tag => ({ ...tag, showText: tag.text })),
-    proxyHandler
-  );
-
+  
+  $: internalSelectedTags = selectedTags.map(tag => ({ ...tag, showText: tag.text }));
+  
   const getAllTags = async () => graphDB.getAllNodesByType(tagType);
   let allTags: Node[] = [];
   onMount(async () => {
@@ -85,24 +61,128 @@
     return result;
   };
 
+  // todo: move this to parent
+  let tagInput = '';
+  let selectedChoiceIndex = 0;
+
   const tagClickHandler = (tag: TagChoices) => {
-    if (tagType == NodeType.Word) selectedNode.set(tag);
+    // if (tagType == NodeType.Word) selectedNode.set(tag);
+    // internalSelectedTags.push(tag);
+    // internalSelectedTags = internalSelectedTags;
+  };
+  $: tagInput, selectedChoiceIndex = 0;
+  const addTag = () => {
+    // addingCallback();
+    // normalizeWord(tagInput);
+    // if (tagInput !== '') {
+    //   tags.push(normalizeWord(tagInput));
+    //   tags = [...tags, normalizeWord(tagInput)];
+    //   tagInput = '';
+    // }
+  };
+  const popTag = () => {
+  };
+  const removeTag = (index: number) => {
+  };
+  let inputLayout: HTMLDivElement;
+  let isFocused = false;
+  const onFocus = () => {
+    inputLayout.classList.add('focus');
+    isFocused = true;
+  }
+  const onBlur = () => {
+    inputLayout.classList.remove('focus');
+    isFocused = false;
+  }
+
+  const keydownHandler = (ev: KeyboardEvent) => {
+    console.log(ev.key);
+    switch(ev.key) {
+    case 'Enter': return addTag();
+    case 'Backspace': return popTag();
+    default: break;
+    }
   };
 
 </script>
 
-<div class='flex flex-col gap-2 my-2'>
+<div class="flex flex-col gap-2 my-2">
   <span>{label}</span>
-  <Tags bind:tags={internalSelectedTags}
-    placeholder={`Add ${label.toLowerCase()}...`}
-    autoComplete={
-      isAllowCreate
-        ? internalAutoCompleteFn
-        : remainChoices
-    }
-    minChars={0}
-    autoCompleteKey='showText' autoCompleteShowKey='showText'
-    onlyAutocomplete onlyUnique
-    onTagClick={tagClickHandler}
-  />
+  <div class='tags-input' bind:this={inputLayout}>
+    <div class="tags">
+      {#each internalSelectedTags as tag, idx}
+        <button class={`tag ${isAllowTagClick ? 'cursor-pointer' : 'cursor-auto'}`} on:click={() => {
+          if (isAllowTagClick) {
+            tagClickHandler(tag);
+          }
+        }} >
+          { Object.getOwnPropertyDescriptor(tag, autoCompleteKey)?.value }
+          <button on:click={() => removeTag(idx)}>
+            <span><Icon icon={IconClose} width="20" /></span>
+          </button>
+        </button>
+      {/each}
+    </div>
+    <input
+      type="text"
+      placeholder={`Add ${label.toLowerCase()}...`}
+      bind:value={tagInput}
+      on:keydown={keydownHandler}
+      on:focus={onFocus}
+      on:blur={onBlur}
+    />
+  </div>
+  <!-- {#if isFocused && }
+    <ul class="
+        menu bg-base-200 w-full max-w-md rounded-box absolute top-16 z-10
+        {(searchText.length > 0) ? 'visible' : 'invisible'}
+      "
+    >
+        {#each searchResultNodes as node, idx}
+          <li><a href={null} class="{searchCandidateIndex == idx ? 'active' : ''}"
+            on:mousedown={(ev) => {
+              // use mousedown instead of click to prevent blur behaviour
+              ev.preventDefault();
+              selectWord();
+            }}
+            on:mouseenter={() => searchCandidateIndex = idx}
+          >
+            {#if (node.type != '')}
+              {node.text}
+            {:else}
+              Add "{searchText}" as a new word
+            {/if}
+          </a></li>
+        {/each}
+    </ul>
+  {/if} -->
 </div>
+
+
+<style lang='postcss'>
+.tags-input {
+  @apply flex flex-wrap px-2 py-3 items-center content-center gap-2;
+  @apply border border-transparent rounded-xl;
+  @apply bg-zinc-800;
+
+  .tags {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .tag {
+    @apply flex gap-2 py-1 px-2 items-center content-center;
+    @apply border border-zinc-700 rounded-xl;
+  }
+
+  input {
+    @apply flex border-none mx-1 flex-grow;
+    background: unset;
+  }
+  input:focus {
+    @apply outline-none;
+  }
+}
+.tags-input.focus {
+  @apply border border-zinc-700;
+}
+</style>

@@ -37,8 +37,8 @@
     isEditWord = false;
   };
   const closeHandler = () => {
-    isEditWord = false;
     selectedNode.set(undefined);
+    isEditWord = false;
   };
 
 
@@ -46,10 +46,10 @@
 
 <div class="flex gap-2 items-baseline justify-between max-w-md">
 
-  {#if !isEditWord}
-    <span>{editorStatusText}</span>
-  {:else}
+  {#if isEditWord}
     <input type="text" class="input input-bordered max-w-xs" bind:value={editWord} />
+  {:else}
+    <span>{editorStatusText}</span>
   {/if}
 
   <div class="flex gap-2">
