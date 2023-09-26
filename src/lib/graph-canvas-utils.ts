@@ -3,7 +3,7 @@ import type { ForceGraphInstance } from 'force-graph';
 
 import { graphNodeColors, graphNodeHighlightColors, graphEdgeColors } from '@/lib/color';
 import type { CustomLinkObject, CustomNodeObject } from '@/lib/graph-db';
-import { selectedNode, selectedNodeId } from '@/lib/store';
+import { selectedNodeId } from '@/lib/store';
 
 import { EdgeType, twoWaysEdge } from '@/utils/const';
 
@@ -15,7 +15,7 @@ export const graphSetup = (graphInstance: ForceGraphInstance) => {
   graphInstance
     .autoPauseRedraw(false)
     .linkColor((link: CustomLinkObject) => {
-      return graphEdgeColors.get(link.type as string) ?? '#FFFFFF';
+      return graphEdgeColors.get(link.type!) ?? '#FFFFFF';
     })
     .linkLabel((link: CustomLinkObject) => `link:${link.type}`)
     .linkDirectionalArrowRelPos(0.5)
@@ -40,7 +40,7 @@ export const graphSetup = (graphInstance: ForceGraphInstance) => {
 
       // if selected, highligh node
       if (get(selectedNodeId) == node.id) {
-        ctx.fillStyle = graphNodeHighlightColors.get(node.type!) ?? 'red';
+        ctx.fillStyle = graphNodeHighlightColors.get(node.type!) ?? 'rgba(100, 100, 100, 0.8)';
         ctx.fillRect(
           rectDimension[0] - SELECTED_PADDING,
           rectDimension[1] - SELECTED_PADDING,

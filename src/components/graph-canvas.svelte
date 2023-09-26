@@ -70,10 +70,21 @@
       })
       .linkWidth((link: CustomLinkObject) => highlightEdges.has(link.id!) ? 5 : 1)
       .linkDirectionalParticleWidth((link: CustomLinkObject) => highlightEdges.has(link.id!) ? 4 : 0)
-      .linkDirectionalParticleColor('red')
       .linkDirectionalParticles(1)
+      .linkDirectionalParticleColor('#000000')
+      .linkDirectionalParticleSpeed(0.02)
       .onNodeClick((node: CustomNodeObject) => {
         selectedNode.set(node);
+      })
+      .nodeVisibility((node: CustomNodeObject) => {
+        if (!$selectedNode) return true; // if no any node selected, then show all
+        // otherwise, show only selected node and highlight nodes
+        return node.id == $selectedNode.id || highlightNodes.has(node.id as string);
+      })
+      .linkVisibility((link: CustomLinkObject) => {
+        if (!$selectedNode) return true; // if no any node selected, then show all
+        // otherwise, show only highlight edges
+        return highlightEdges.has(link.id as string);
       })
       .nodePointerAreaPaint((node: CustomNodeObject, color, ctx) => {
         ctx.fillStyle = color;
