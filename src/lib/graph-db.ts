@@ -75,19 +75,15 @@ export interface CustomGraphData extends GraphData {
 
 export class GraphDB {
   db!: DB;
-  isDirty: boolean;
-  cache: Map<string, any>;
 
   constructor(db: DB) {
     this.db = db;
-    this.isDirty = false;
-    this.cache = new Map();
   }
 
-  async getNodeFromId(nodeId: string) {
+  getNodeFromId(nodeId: string) {
     return this.db.nodes.get(nodeId);
   }
-  async editNodeText(nodeId: string, text: string) {
+  editNodeText(nodeId: string, text: string) {
     return this.db.nodes.update(nodeId, { text });
   }
 
@@ -225,7 +221,7 @@ export class GraphDB {
   async deleteNodeAndConnectedEdges(nodeId: string) {
     const connectedEdgesId = (await this.getConnectedEdgesByNodeId(nodeId))
       .map(edge => edge.id);
-    Promise.all([
+    return Promise.all([
       this.db.edges.bulkDelete(connectedEdgesId),
       this.db.nodes.delete(nodeId),
     ]);
@@ -239,13 +235,21 @@ export class GraphDB {
     await this.db.edges.add(newEdge);
     return newEdge;
   }
-  async deleteEdge(edgeId: string): Promise<void> {
+  deleteEdge(edgeId: string): Promise<void> {
     return this.db.edges.delete(edgeId);
   }
-  async deleteEdgeByNodesId(sourceId: string, targetId: string) {
+  deleteEdgeByNodesId(sourceId: string, targetId: string) {
     return this.db.edges
       .where({ sourceId, targetId })
       .delete();
+  }
+}
+
+export class WordDB {
+  db!: DB;
+
+  constructor(db: DB) {
+    this.db = db;
   }
 
   async getWordNoteById(nodeId?: string): Promise<string> {
@@ -267,4 +271,6 @@ export class GraphDB {
   }
 }
 
-export const graphDB = new GraphDB(new DB());
+const db = new DB();
+export const graphDB = new GraphDB(db);
+export const wordDB = new WordDB(db);

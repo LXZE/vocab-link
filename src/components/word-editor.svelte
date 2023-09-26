@@ -8,7 +8,7 @@
 
   import { queryNodeByText, selectedNode, selectedNodeId } from '@/lib/store';
   import { NodeType, EditorState, EdgeType } from '@/utils/const';
-  import { graphDB } from '@/lib/graph-db';
+  import { graphDB, wordDB } from '@/lib/graph-db';
   import type { Node, CustomNodeObject, TargetNode } from '@/lib/graph-db';
   import { nodeSortFn } from '@/lib/utils';
 
@@ -88,7 +88,7 @@
     const toDeleteNodeId = $selectedNodeId ?? '';
     selectedNode.set(undefined);
     await graphDB.deleteNodeAndConnectedEdges(toDeleteNodeId);
-    await graphDB.deleteWordNoteById(toDeleteNodeId);
+    await wordDB.deleteWordNoteById(toDeleteNodeId);
   };
 
 </script>
