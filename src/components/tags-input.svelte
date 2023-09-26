@@ -19,7 +19,7 @@
   export let allowCreateNode = false;
   export let allowTagClick = false;
 
-  /** if isAllowCreate, the choice function must be provided */
+  /** if allowCreateNode is true, the choice function must be provided */
   export let choiceFunction: (_queryText: string) => Promise<Node[]> = async (_) => [];
 
   export let inputLabel = '';
@@ -151,59 +151,62 @@
 
 </script>
 
-<div class="flex flex-col gap-2 my-2 relative">
+<div class='py-2'>
   <span>{inputLabel}</span>
-  <div class='tags-input' bind:this={inputLayout}>
-    <div class="tags">
-      {#each internalSelectedTags as tag, idx}
-        <button class={`tag ${allowTagClick ? 'cursor-pointer' : 'cursor-auto'}`}
-          on:pointerdown={(ev) => {
-            ev.preventDefault();
-            if (allowTagClick) {
-              tagClickHandler(tag);
-            }
-          }}
-        >
-          { Object.getOwnPropertyDescriptor(tag, autoCompleteObjectKey)?.value }
-          <span on:pointerdown={(ev) => {
-            ev.preventDefault();
-            ev.stopPropagation();
-            removeTag(idx);
-          }}>
-            <Icon icon={IconClose} width="20" />
-          </span>
-        </button>
-      {/each}
-    </div>
-    <input bind:this={inputElem}
-      autocomplete="off"
-      type="text"
-      placeholder={`Add ${inputLabel.toLowerCase()}...`}
-      bind:value={tagInput}
-      on:keydown={keydownHandler}
-      on:focus={focusHandler}
-      on:blur={blurHandler}
-    />
-  </div>
-  {#if isFocused && candidateChoices.length > 0}
-    <ul class="menu w-full max-w-md rounded-box bg-zinc-800"
-    >
-        {#each candidateChoices as choice, idx}
-          <li><a href={null} class="hover:bg-zinc-600
-            {selectedChoiceIndex == idx ? 'bg-zinc-600' : ''}
-          "
-            on:mousedown={(ev) => {
-              // use mousedown instead of click to prevent blur behaviour
+  <div class="flex flex-col gap-2 my-2 relative">
+    <div class='tags-input' bind:this={inputLayout}>
+      <div class="tags">
+        {#each internalSelectedTags as tag, idx}
+          <button class={`tag ${allowTagClick ? 'cursor-pointer' : 'cursor-auto'}`}
+            on:pointerdown={(ev) => {
               ev.preventDefault();
-              addTag(idx);
+              if (allowTagClick) {
+                tagClickHandler(tag);
+              }
             }}
-            on:mouseenter={() => selectedChoiceIndex = idx}
           >
-            {Object.getOwnPropertyDescriptor(choice, autoCompleteObjectKey)?.value}
-          </a></li>
+            { Object.getOwnPropertyDescriptor(tag, autoCompleteObjectKey)?.value }
+            <span on:pointerdown={(ev) => {
+              ev.preventDefault();
+              ev.stopPropagation();
+              removeTag(idx);
+            }}>
+              <Icon icon={IconClose} width="20" />
+            </span>
+          </button>
         {/each}
-    </ul>
-  {/if}
+      </div>
+      <input bind:this={inputElem}
+        autocomplete="off"
+        type="text"
+        placeholder={`Add ${inputLabel.toLowerCase()}...`}
+        bind:value={tagInput}
+        on:keydown={keydownHandler}
+        on:focus={focusHandler}
+        on:blur={blurHandler}
+      />
+    </div>
+    {#if isFocused && candidateChoices.length > 0}
+      <ul class='menu w-full max-w-md rounded-box bg-zinc-800 absolute z-10'
+        style={`top: calc(${inputLayout.clientHeight}px + 0.5rem)`}
+      >
+          {#each candidateChoices as choice, idx}
+            <li><a href={null} class="hover:bg-zinc-600
+              {selectedChoiceIndex == idx ? 'bg-zinc-600' : ''}
+            "
+              on:mousedown={(ev) => {
+                // use mousedown instead of click to prevent blur behaviour
+                ev.preventDefault();
+                addTag(idx);
+              }}
+              on:mouseenter={() => selectedChoiceIndex = idx}
+            >
+              {Object.getOwnPropertyDescriptor(choice, autoCompleteObjectKey)?.value}
+            </a></li>
+          {/each}
+      </ul>
+    {/if}
+  </div>
 </div>
 
 
