@@ -45,7 +45,7 @@ export const seedData: { [key: string]: SeedData } = {
   '是':   { lang: 'Chinese', pos: POS.Verb, means: ['sein', 'être', '이다'] },
   'sein': { lang: 'German', pos: POS.Verb, means: ['être', '이다'] },
   'être': { lang: 'French', pos: POS.Verb, means: ['이다'] },
-  '이다': {lang: 'Korean', pos: POS.Verb, means: []},
+  '이다': { lang: 'Korean', pos: POS.Verb, means: [] },
 
   'กิน':     { lang: 'Thai', pos: POS.Verb, means: ['eat', '吃', '食べる', '食う', 'essen', 'manger', '먹다', 'לאכול'] },
   'eat':    { lang: 'English', pos: POS.Verb, means: ['吃', '食べる', '食う', 'essen', 'manger', '먹다', 'לאכול'] },

@@ -1,4 +1,4 @@
-import type { TargetNode } from '@/lib/graph-db';
+import type { LinkedNode } from '@/lib/graph-db';
 
 export class TwoWayMap extends Map<string, string> {
   constructor(list: [string, string][]) {
@@ -7,7 +7,7 @@ export class TwoWayMap extends Map<string, string> {
   }
 }
 
-export const nodeSortFn = (a: Pick<TargetNode, 'edgeCreatedAt'>, b: Pick<TargetNode, 'edgeCreatedAt'>) => {
+export const nodeSortFn = (a: Pick<LinkedNode, 'edgeCreatedAt'>, b: Pick<LinkedNode, 'edgeCreatedAt'>) => {
   return a.edgeCreatedAt - b.edgeCreatedAt;
 };
 

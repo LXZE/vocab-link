@@ -11,11 +11,11 @@
 
   import { selectedNode } from '@/lib/store';
   import { graphDB } from '@/lib/graph-db';
-  import type { Node, TargetNode } from '@/lib/graph-db';
+  import type { Node, LinkedNode } from '@/lib/graph-db';
   import { NodeType } from '@/utils/const';
   import { normalizeWord } from '@/lib/utils';
 
-  /** if true, allow component to generate new node instead of select the exist node */
+  /** if true, allow component to generate new node instead of select the exist node (must provide choiceFunction) */
   export let allowCreateNode = false;
   export let allowTagClick = false;
 
@@ -26,10 +26,10 @@
   export let autoCompleteObjectKey = 'showText';
   export let minimumChars = 1;
   export let tagType: NodeType;
-  export let selectedTags: TargetNode[] = [];
+  export let selectedTags: LinkedNode[] = [];
 
   export let addingCallback: (_arg0: Node) => void = (_) => {};
-  export let deletingCallback: (_arg1: TargetNode) => void = (_arg1: TargetNode) => {};
+  export let deletingCallback: (_arg1: LinkedNode) => void = (_arg1: LinkedNode) => {};
 
   $: internalSelectedTags = selectedTags.map(tag => ({ ...tag, showText: tag.text }));
 
@@ -190,7 +190,7 @@
       />
     </div>
     {#if isFocused && candidateChoices.length > 0}
-      <ul class='menu w-full max-w-md rounded-box bg-zinc-800 absolute z-10'
+      <ul class='menu w-full max-w-md rounded-box bg-zinc-800 absolute z-10 border border-zinc-600'
         style={`top: calc(${inputLayout.clientHeight}px + 0.5rem)`}
       >
           {#each candidateChoices as choice, idx}

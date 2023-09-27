@@ -19,7 +19,7 @@ export interface NodeInfo {
   [key: string]: any
 }
 
-export interface TargetNode extends Node {
+export interface LinkedNode extends Node {
   linkedEdgeId: string
   edgeCreatedAt: number
 }
@@ -97,7 +97,10 @@ export class GraphDB {
   }
 
   async getGraphForDisplay(): Promise<CustomGraphData> {
-    const { nodes, edges } = await this.getGraph();
+    const edges = await this.getAllEdges();
+    const allLinkedNodesId = new Set(edges.flatMap(edge => ([edge.sourceId, edge.targetId])));
+    const nodes = (await this.db.nodes.bulkGet(Array.from(allLinkedNodesId)))
+      .filter((maybeNode): maybeNode is Node => maybeNode !== undefined);
     const result = {
       nodes,
       links: edges.map(this.marshalEdge),
@@ -111,29 +114,24 @@ export class GraphDB {
       .toArray();
   }
 
-  async getAllConnectionByNodeId(nodeId: string): Promise<TargetNode[]> {
+  async getAllConnectionByNodeId(nodeId: string): Promise<LinkedNode[]> {
     const connectedEdges = await this.db.edges
       .where('sourceId').equals(nodeId)
       .toArray();
     const connectedNodes = await this.db.nodes.bulkGet(connectedEdges.map(edge => edge.targetId));
     return zip(connectedNodes, connectedEdges)
-      .map(([node, edge]): TargetNode | undefined => {
+      .map(([node, edge]): LinkedNode | undefined => {
         if (node && edge) {
           return {...node, linkedEdgeId: edge.id, edgeCreatedAt: edge.createdAt};
         }
         return undefined;
       })
-      .filter((node): node is TargetNode => node !== undefined);
+      .filter((node): node is LinkedNode => node !== undefined);
   }
 
-  getAllNodes(): Promise<Node[]> { return this.db.nodes.toArray(); }
   getAllEdges(): Promise<Edge[]> { return this.db.edges.toArray(); }
-  async getGraph(): Promise<Graph> {
-    const [nodes, edges] = await Promise.all([this.getAllNodes(), this.getAllEdges()]);
-    return { nodes, edges };
-  }
 
-  async getConnectedEdgesByNodeId(nodeId: string): Promise<Edge[]> {
+  getConnectedEdgesByNodeId(nodeId: string): Promise<Edge[]> {
     return this.db.edges
       .where('sourceId').equals(nodeId)
       .or('targetId').equals(nodeId)
@@ -175,38 +173,38 @@ export class GraphDB {
   }
 
   async getNeighborWords(nodeId: string): Promise<Node[]> {
-    const connectedEdgesId = (await this.getConnectedEdgesByNodeId(nodeId))
-      .flatMap(edge => [edge.sourceId, edge.targetId])
-      .filter(neighborNodeId => neighborNodeId != nodeId);
+    const connectedNodesId = Array.from(new Set(
+      (await this.getConnectedEdgesByNodeId(nodeId))
+        .flatMap(edge => [edge.sourceId, edge.targetId])
+        .filter(neighborNodeId => neighborNodeId != nodeId)
+    ));
 
-    return await this.db.nodes
-      .where('id').anyOf(connectedEdgesId)
+    return this.db.nodes
+      .where('id').anyOf(connectedNodesId)
       .and(node => node.type == NodeType.Word)
       .toArray();
   }
 
   async getSecondDegreeWordNeighbors(nodeId: string): Promise<Node[]> {
-    const currentNode = await this.db.nodes.get(nodeId);
-    if (!currentNode) {
-      throw new Error('given node id not found');
-    }
     const neighborWordsNode = await this.getNeighborWords(nodeId);
     const neighborWordsSet = new Set(neighborWordsNode.map(node => node.id));
-
-    const secondDegreeNeighborWordsNode =
-      (await Promise.all(
-        neighborWordsNode.map(node => this.getNeighborWords(node.id))
-      ))
-        .flat()
-        .reduce((map: Map<string, Node>, node: Node) => {
-          if (node.id != nodeId // not current node
-            && !neighborWordsSet.has(node.id) // not connected node
-            && !map.has(node.id)) // not duplicated node
-            map.set(node.id, node);
-          return map;
-        }, new Map<string, Node>())
-        .values();
-    return Array.from(secondDegreeNeighborWordsNode);
+    const unique2ndDegreeNodes = new Map<string, Node>();
+    for await (const node of neighborWordsNode) {
+      const currentUniqueNode = new Set(unique2ndDegreeNodes.keys());
+      const secondDegreeNodesId = (await this.db.edges.where({ sourceId: node.id })
+        .filter(edge => edge.targetId != nodeId)
+        .toArray()
+      )
+        .map(edge => edge.targetId);
+      await this.db.nodes
+        .where('id').anyOf(secondDegreeNodesId)
+        .and(node => node.type == NodeType.Word
+          && !currentUniqueNode.has(node.id)
+          && !neighborWordsSet.has(node.id)
+        )
+        .each(node => unique2ndDegreeNodes.set(node.id, node));
+    }
+    return Array.from(unique2ndDegreeNodes.values());
   }
 
   async createNewNode(type: NodeType, text: string): Promise<Node> {
@@ -258,6 +256,9 @@ export class WordDB {
   }
 
   async updateWordNoteById(nodeId: string, note: string) {
+    if (note == '') {
+      return await this.db.nodeInfo.delete(nodeId);
+    }
     const res = await this.db.nodeInfo.update(nodeId, { note });
     if (res == 0) {
       await this.db.nodeInfo.add({

@@ -6,7 +6,8 @@
   import IconClose from '@iconify/icons-material-symbols/close';
 
   import { graphDB, type Node } from '@/lib/graph-db';
-  import { selectedNode, queryNodeByText } from '@/lib/store';
+  import { selectedNode } from '@/lib/store';
+  import { queryNodeByText, allWordIndex } from '@/lib/search';
   import { getAgentSystem, getModifierKey, normalizeWord } from '@/lib/utils';
   import { NodeType } from '@/utils/const';
 
@@ -24,7 +25,7 @@
       searchResultNodes = [];
       return;
     }
-    searchResultNodes = queryNodeByText(normalizedQuery, { limit: CANDIDATE_LIMIT });
+    searchResultNodes = queryNodeByText(normalizedQuery, allWordIndex, { limit: CANDIDATE_LIMIT });
     // if no exact match then suggest to add a new word.
     if (normalizedQuery.length > 0 && !searchResultNodes.some(res => res.text == searchText)) {
       searchResultNodes = [...searchResultNodes, {

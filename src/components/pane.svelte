@@ -8,6 +8,11 @@
 
   import { leftPaneSize, rightPaneSize } from '@/lib/store';
 
+  import { graphDB } from '@/lib/graph-db';
+  import { init_db, clear_db } from '@/utils/db-action';
+
+  let dev = true;
+
   let lPaneSize = get(leftPaneSize);
   $: lPaneSize, leftPaneSize.set(lPaneSize);
   let rPaneSize = get(rightPaneSize);
@@ -34,8 +39,18 @@
   on:splitter-click={resetPaneSize}
 >
 	<Pane minSize={30} bind:size={lPaneSize}>
-    <div class="flex flex-col p-4 gap-4">
+    <div class="flex flex-col p-4 gap-4 h-[100vh] overflow-y-auto">
       <span class='w-full text-center p-2 text-xl'>Word Editor</span>
+      {#if dev}
+        <div class="flex justify-center">
+          <button class="btn" on:click={() => init_db(graphDB.db)}>
+            INIT DB
+          </button>
+          <button class="btn" on:click={() => clear_db(graphDB.db)}>
+            NUKE DB
+          </button>
+        </div>
+      {/if}
       <div class="flex flex-col p-2 gap-2 items-stretch">
         <SearchInput />
         <WordEditor />
