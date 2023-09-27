@@ -1,7 +1,7 @@
 {
   "name": "vocab-link-svelte",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite dev --host",
@@ -10,6 +10,13 @@
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "devDependencies": {
+    "@typescript-eslint/parser": "^6.7.0",
+    "eslint-plugin-svelte": "^2.33.1",
+    "eslint": "^8.49.0",
+    "svelte-check": "^3.4.6",
+    "svelte-eslint-parser": "^0.33.0"
+  },
+  "dependencies": {
     "@iconify/icons-material-symbols": "^1.2.55",
     "@iconify/svelte": "^3.1.4",
     "@sveltejs/vite-plugin-svelte": "^2.4.2",
@@ -17,26 +24,19 @@
     "@tsconfig/svelte": "^5.0.0",
     "@types/lodash": "^4.14.198",
     "@types/node": "^20.6.1",
-    "@typescript-eslint/parser": "^6.7.0",
     "autoprefixer": "^10.4.15",
     "daisyui": "^3.7.4",
-    "eslint": "^8.49.0",
-    "eslint-plugin-svelte": "^2.33.1",
-    "postcss": "^8.4.29",
-    "svelte": "^4.0.5",
-    "svelte-check": "^3.4.6",
-    "svelte-eslint-parser": "^0.33.0",
-    "svelte-splitpanes": "^0.8.0",
-    "tailwindcss": "^3.3.3",
-    "typescript": "^5.0.2",
-    "vite": "^4.4.5"
-  },
-  "dependencies": {
     "dexie": "4.0.1-alpha.25",
     "force-graph": "^1.43.4",
     "fuzzysort": "^2.0.4",
     "lodash": "^4.17.21",
     "normalize-diacritics": "^4.0.3",
-    "svelte-watch-resize": "^1.0.3"
+    "postcss": "^8.4.29",
+    "svelte-splitpanes": "^0.8.0",
+    "svelte-watch-resize": "^1.0.3",
+    "svelte": "^4.0.5",
+    "tailwindcss": "^3.3.3",
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5"
   }
 }
