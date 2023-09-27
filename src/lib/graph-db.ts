@@ -178,7 +178,6 @@ export class GraphDB {
         .flatMap(edge => [edge.sourceId, edge.targetId])
         .filter(neighborNodeId => neighborNodeId != nodeId)
     ));
-
     return this.db.nodes
       .where('id').anyOf(connectedNodesId)
       .and(node => node.type == NodeType.Word)
@@ -186,25 +185,26 @@ export class GraphDB {
   }
 
   async getSecondDegreeWordNeighbors(nodeId: string): Promise<Node[]> {
+    // get neighbor Nodes
     const neighborWordsNode = await this.getNeighborWords(nodeId);
     const neighborWordsSet = new Set(neighborWordsNode.map(node => node.id));
-    const unique2ndDegreeNodes = new Map<string, Node>();
-    for await (const node of neighborWordsNode) {
-      const currentUniqueNode = new Set(unique2ndDegreeNodes.keys());
-      const secondDegreeNodesId = (await this.db.edges.where({ sourceId: node.id })
-        .filter(edge => edge.targetId != nodeId)
+
+    // get neighbor of neighbor Nodes (2nd degree), excluding 1st degree neighbor
+    const secondDegreeNodesId = Array.from(new Set(
+      (await this.db.edges
+        .where('sourceId').anyOf(neighborWordsNode.map(node => node.id))
+        .and(edge => edge.targetId != nodeId)
         .toArray()
       )
-        .map(edge => edge.targetId);
-      await this.db.nodes
-        .where('id').anyOf(secondDegreeNodesId)
-        .and(node => node.type == NodeType.Word
-          && !currentUniqueNode.has(node.id)
-          && !neighborWordsSet.has(node.id)
-        )
-        .each(node => unique2ndDegreeNodes.set(node.id, node));
-    }
-    return Array.from(unique2ndDegreeNodes.values());
+        .map(edge => edge.targetId)
+        .filter(targetNodeId => !neighborWordsSet.has(targetNodeId))
+    ));
+
+    // map id to node (filter only word)
+    return await this.db.nodes
+      .where('id').anyOf(secondDegreeNodesId)
+      .filter(node => node.type == NodeType.Word)
+      .toArray();
   }
 
   async createNewNode(type: NodeType, text: string): Promise<Node> {

@@ -55,20 +55,18 @@
   <div class="flex gap-2">
     {#if currentEditorState !== EditorState.NoWordSelected}
 
-      {#if currentEditorState == EditorState.WordSelected}
-        {#if !isEditWord}
-          <div class="tooltip" data-tip="Edit word">
-            <button class="btn btn-square" on:click={openEditWordHandler}>
-              <Icon icon={editIcon} width={20} />
-            </button>
-          </div>
-        {:else}
-          <div class="tooltip" data-tip="Save word">
-            <button class="btn btn-square" on:click={saveEditWordHandler}>
-              <Icon icon={saveIcon} width={20} />
-            </button>
-          </div>
-        {/if}
+      {#if !isEditWord}
+        <div class="tooltip" data-tip="Edit word">
+          <button class="btn btn-square" on:click={openEditWordHandler}>
+            <Icon icon={editIcon} width={20} />
+          </button>
+        </div>
+      {:else}
+        <div class="tooltip" data-tip="Save word">
+          <button class="btn btn-square" on:click={saveEditWordHandler}>
+            <Icon icon={saveIcon} width={20} />
+          </button>
+        </div>
       {/if}
 
       <div class="tooltip" data-tip="Close">

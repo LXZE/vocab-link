@@ -6,6 +6,8 @@
 
 <script lang='ts'>
   import { onMount } from 'svelte';
+  import { debounce } from 'lodash';
+
   import Icon from '@iconify/svelte';
   import IconClose from '@iconify/icons-material-symbols/close';
 
@@ -56,7 +58,8 @@
 
     if (allowCreateNode && // allow create new word
       normalizedQueryText.length > 0 && // query text is not empty string
-      !result.some(res => res.text == normalizedQueryText) // no query text in choices
+      !internalSelectedTags.some(tag => tag.text == queryText) && // no query text in selected choice
+      !result.some(res => res.text == queryText) // no query text in choices
     ) {
       result.push({
         id: '', type: '', text: normalizedQueryText, createdAt: Date.now(),
@@ -68,8 +71,7 @@
 
 
   let candidateChoices: TagChoices[] = [];
-  const setCandidateChoices = async () => {
-    candidateChoices = [];
+  const setCandidateChoices = debounce(async () => {
     if (tagInput.length < minimumChars) return;
     if (allowCreateNode) {
       candidateChoices = await internalAutoCompleteFn(tagInput);
@@ -77,9 +79,8 @@
       candidateChoices = remainChoices
         .filter(choice => choice.text.toLowerCase().includes(tagInput.toLowerCase()));
     }
-  };
+  }, 100, { trailing: true, maxWait: 200 });
   $: (tagInput, internalSelectedTags), setCandidateChoices();
-
 
   const tagClickHandler = (tag: TagChoices) => {
     if (tagType == NodeType.Word) {

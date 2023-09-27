@@ -24,14 +24,14 @@ liveQuery(async () => await graphDB.getAllNodesByType(NodeType.Roman))
 
 export type SearchOption = {
   limit?: number
-  excludeWordsId?: string[]
+  excludeNodesId?: string[]
 }
 const defaultOption: SearchOption = {
   limit: 10,
-  excludeWordsId: [],
+  excludeNodesId: [],
 };
 export const queryNodeByText = (queryText: string, indexedNodes: IndexedNode[], givenOptions: SearchOption) => {
-  const { limit, excludeWordsId } = { ...defaultOption, ...givenOptions };
+  const { limit, excludeNodesId: excludeWordsId } = { ...defaultOption, ...givenOptions };
   const existIds = new Set(excludeWordsId);
   const filtererIndex = indexedNodes.filter(word => !existIds.has(word.id));
   return fuzzysort.go(normalizeSync(queryText), filtererIndex, { key: KEY_INDEX, limit })
