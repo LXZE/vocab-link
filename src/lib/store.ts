@@ -1,6 +1,7 @@
 import { writable, derived } from 'svelte/store';
 import { liveQuery } from 'dexie';
 import fuzzysort from 'fuzzysort';
+import { normalizeSync } from 'normalize-diacritics';
 
 import { NodeType } from '@/utils/const';
 import { graphDB } from '@/lib/graph-db';
@@ -22,7 +23,7 @@ const allWordNodesObservable = liveQuery(async () => await graphDB.getAllNodesBy
 allWordNodesObservable.subscribe(async (nodes) => {
   allWordIndex = nodes.map((node) => ({
     ...node,
-    textPrepared: fuzzysort.prepare(node.text)
+    textPrepared: fuzzysort.prepare(normalizeSync(node.text))
   }));
 });
 
@@ -38,7 +39,7 @@ export const queryNodeByText = (queryText: string, givenOptions: SearchOption) =
   const { limit, excludeWordsId } = { ...defaultOption, ...givenOptions };
   const existIds = new Set(excludeWordsId);
   const filtererIndex = allWordIndex.filter(word => !existIds.has(word.id));
-  return fuzzysort.go(queryText, filtererIndex, { key: 'textPrepared', limit })
+  return fuzzysort.go(normalizeSync(queryText), filtererIndex, { key: 'textPrepared', limit })
     .map(res => res.obj);
 };
 

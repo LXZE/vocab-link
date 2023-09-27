@@ -69,7 +69,9 @@
         });
     }
     else if (graphDrawer != undefined) {
-      if (zoomLevel > 1) zoomOut(0.5);
+      graphDrawer
+        .zoomToFit(500, 20)
+        .centerAt(0, 0, 500);
     }
   });
 

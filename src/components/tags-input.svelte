@@ -82,7 +82,10 @@
 
 
   const tagClickHandler = (tag: TagChoices) => {
-    if (tagType == NodeType.Word) selectedNode.set(tag);
+    if (tagType == NodeType.Word) {
+      selectedNode.set(tag);
+      blurHandler();
+    }
   };
   const addTag = (idx: number) => {
     const selectedTag = candidateChoices[idx];
