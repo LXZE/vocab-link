@@ -1,5 +1,5 @@
 import { EdgeType, NodeType } from '@/utils/const';
-import Dexie, { type Table } from 'dexie';
+import Dexie, { type DexieOptions, type Table } from 'dexie';
 import type { GraphData, NodeObject, LinkObject } from 'force-graph';
 import { generateUID } from './utils';
 import { zip } from 'lodash';
@@ -47,8 +47,8 @@ export class DB extends Dexie {
   edges!: Table<Edge, string>;
   nodeInfo!: Table<NodeInfo, string>;
 
-  constructor() {
-    super(DB_NAME);
+  constructor(options?: DexieOptions) {
+    super(DB_NAME, options);
     this.version(2).stores({
       nodes: '&id,&text',
       edges: '&id,sourceId,targetId',

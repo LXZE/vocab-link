@@ -7,14 +7,20 @@
     "dev": "vite dev --host",
     "build": "vite build",
     "preview": "vite preview",
+    "test": "vitest",
+    "test-ui": "vitest --ui",
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "devDependencies": {
+    "@testing-library/svelte": "^4.0.3",
     "@typescript-eslint/parser": "^6.7.0",
-    "eslint-plugin-svelte": "^2.33.1",
     "eslint": "^8.49.0",
+    "eslint-plugin-svelte": "^2.33.1",
+    "fake-indexeddb": "^4.0.2",
+    "jsdom": "^22.1.0",
     "svelte-check": "^3.4.6",
-    "svelte-eslint-parser": "^0.33.0"
+    "svelte-eslint-parser": "^0.33.0",
+    "vitest": "^0.34.5"
   },
   "dependencies": {
     "@iconify/icons-material-symbols": "^1.2.55",
@@ -32,9 +38,9 @@
     "lodash": "^4.17.21",
     "normalize-diacritics": "^4.0.3",
     "postcss": "^8.4.29",
+    "svelte": "^4.0.5",
     "svelte-splitpanes": "^0.8.0",
     "svelte-watch-resize": "^1.0.3",
-    "svelte": "^4.0.5",
     "tailwindcss": "^3.3.3",
     "typescript": "^5.0.2",
     "vite": "^4.4.5"
