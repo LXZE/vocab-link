@@ -19,6 +19,7 @@
     return EditorState.WordSelected;
   };
   $: currentEditorState = getEditorStatus($selectedNode);
+  $: isAllowDelete = [NodeType.Word, NodeType.Roman].includes($selectedNode?.type as NodeType);
 
   $: connectedNodes$ = liveQuery<LinkedNode[]>(async () => {
     if (currentEditorState == EditorState.WordSelected && $selectedNodeId != null) {
@@ -91,7 +92,8 @@
     const toDeleteNodeId = $selectedNodeId ?? '';
     selectedNode.set(undefined);
     await graphDB.deleteNodeAndConnectedEdges(toDeleteNodeId);
-    await wordDB.deleteWordNoteById(toDeleteNodeId);
+    if ($selectedNode?.type == NodeType.Word)
+      await wordDB.deleteWordNoteById(toDeleteNodeId);
   };
 
   // eslint-disable-next-line no-control-regex
@@ -106,8 +108,8 @@
 </div>
 
 
-<div class="flex flex-col">
-  {#if currentEditorState == EditorState.WordSelected}
+{#if currentEditorState == EditorState.WordSelected}
+  <div class="flex flex-col border border-zinc-700 rounded-sm px-4 pb-6">
     <TagsInput bind:selectedTags={languageSelected}
       inputLabel={'Language'} tagType={NodeType.Language}
       addingCallback={linkNodeHandler(EdgeType.IsLanguage, NodeType.Language)}
@@ -132,7 +134,8 @@
     {#if isExceedLatin}
       <TagsInput selectedTags={romanSelected}
         inputLabel={'Romanization'} tagType={NodeType.Roman}
-        allowCreateNode choiceFunction={romanChoiceFn}
+        allowCreateNode allowTagClick
+        choiceFunction={romanChoiceFn}
         addingCallback={linkNodeHandler(EdgeType.Romanization, NodeType.Roman)}
         deletingCallback={delete1WayLinkHandler}
       />
@@ -148,14 +151,16 @@
       </div>
     </div>
 
-    <div class="flex">
-      <button class="btn btn-error" on:click={openDialog}>
-        Delete
-      </button>
-    </div>
-  {/if}
+    {#if isAllowDelete}
+      <div class="flex">
+        <button class="btn btn-error" on:click={openDialog}>
+          Delete
+        </button>
+      </div>
+    {/if}
+  </div>
+{/if}
 
-</div>
 
 <ConfirmDialog bind:open={openDialog}
   onConfirmCallback={deleteWordHandler}

@@ -83,10 +83,8 @@
   $: (tagInput, internalSelectedTags), setCandidateChoices();
 
   const tagClickHandler = (tag: TagChoices) => {
-    if (tagType == NodeType.Word) {
-      selectedNode.set(tag);
-      blurHandler();
-    }
+    selectedNode.set(tag);
+    blurHandler();
   };
   const addTag = (idx: number) => {
     const selectedTag = candidateChoices[idx];
@@ -190,7 +188,7 @@
         on:blur={blurHandler}
       />
     </div>
-    {#if isFocused && candidateChoices.length > 0}
+    {#if isFocused && tagInput.length >= minimumChars && candidateChoices.length > 0}
       <ul class='menu w-full max-w-md rounded-box bg-zinc-800 absolute z-10 border border-zinc-600'
         style={`top: calc(${inputLayout.clientHeight}px + 0.5rem)`}
       >

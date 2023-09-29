@@ -75,7 +75,7 @@
     }
   });
 
-  onMount(async () => {
+  onMount(() => {
     graphDrawer = ForceGraph()(canvas);
     graphSetup(graphDrawer);
 
@@ -123,6 +123,11 @@
       links = newLinks.map((link) => previousLinkData.get(link.id! as string) ?? link);
       updateGraph();
     });
+
+    return () => {
+      graphDrawer.pauseAnimation();
+      graphDrawer.graphData({ nodes: [], links: [] });
+    };
   });
 </script>
 
