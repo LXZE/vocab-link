@@ -1,5 +1,4 @@
 import 'fake-indexeddb/auto';
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { DB, graphDB as importGraph, WordDB } from '@/lib/graph-db';
 import type { GraphDB, Node, Edge } from '@/lib/graph-db';

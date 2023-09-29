@@ -1,5 +1,4 @@
 import 'fake-indexeddb/auto';
-import { describe, expect, it } from 'vitest';
 
 import { queryNodeByText, nodePrepareIndexMapFn } from '@/lib/search';
 import { type Node } from '@/lib/graph-db';

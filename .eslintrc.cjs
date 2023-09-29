@@ -3,7 +3,8 @@ module.exports = {
   env: { browser: true, es2020: true },
   extends: [
     'eslint:recommended',
-    'plugin:svelte/recommended'
+    'plugin:svelte/recommended',
+    'plugin:vitest-globals',
   ],
   ignorePatterns: ['dist', '.eslintrc.cjs'],
   parser: '@typescript-eslint/parser',
@@ -19,6 +20,12 @@ module.exports = {
       parserOptions: {
         parser: '@typescript-eslint/parser'
       }
+    },
+    {
+      files: ["**/tests/**/*.test.{j,t}s?(x)",],
+      env: {
+        'vitest-globals/env': true,
+      }
     }
   ],
   rules: {
@@ -29,7 +36,7 @@ module.exports = {
     'no-redeclare': 0,
     "no-unused-vars": [
       "warn",
-      { 
+      {
         "argsIgnorePattern": "^_",
         "varsIgnorePattern": "^_",
         "caughtErrorsIgnorePattern": "^_"

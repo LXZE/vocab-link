@@ -17,11 +17,13 @@
     "@vitest/ui": "^0.34.5",
     "eslint": "^8.49.0",
     "eslint-plugin-svelte": "^2.33.1",
+    "eslint-plugin-vitest-globals": "^1.4.0",
     "fake-indexeddb": "^4.0.2",
     "jsdom": "^22.1.0",
     "svelte-check": "^3.4.6",
     "svelte-eslint-parser": "^0.33.0",
-    "vitest": "^0.34.5"
+    "vitest": "^0.34.5",
+    "vitest-dom": "^0.1.1"
   },
   "dependencies": {
     "@iconify/icons-material-symbols": "^1.2.55",

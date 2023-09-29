@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     port: 8000,
   },
-  plugins: [svelte({})],
+  plugins: [svelte({ hot: !process.env.VITEST })],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

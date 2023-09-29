@@ -16,6 +16,7 @@
     "isolatedModules": true,
 
     // custom
+    "types": ["vitest/globals"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
