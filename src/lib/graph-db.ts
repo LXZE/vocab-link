@@ -114,7 +114,7 @@ export class GraphDB {
       .toArray();
   }
 
-  async getAllConnectionByNodeId(nodeId: string): Promise<LinkedNode[]> {
+  async getNeighborsNodesByNodeId(nodeId: string): Promise<LinkedNode[]> {
     const connectedEdges = await this.db.edges
       .where('sourceId').equals(nodeId)
       .toArray();

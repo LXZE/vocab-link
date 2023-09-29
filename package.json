@@ -8,11 +8,13 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
+    "test:ui": "vitest --ui",
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "devDependencies": {
     "@testing-library/svelte": "^4.0.3",
     "@typescript-eslint/parser": "^6.7.0",
+    "@vitest/ui": "^0.34.5",
     "eslint": "^8.49.0",
     "eslint-plugin-svelte": "^2.33.1",
     "fake-indexeddb": "^4.0.2",

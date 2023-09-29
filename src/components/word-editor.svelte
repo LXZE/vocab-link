@@ -23,7 +23,7 @@
 
   $: connectedNodes$ = liveQuery<LinkedNode[]>(async () => {
     if (currentEditorState == EditorState.WordSelected && $selectedNodeId != null) {
-      return await graphDB.getAllConnectionByNodeId($selectedNodeId);
+      return await graphDB.getNeighborsNodesByNodeId($selectedNodeId);
     }
     return [];
   });
