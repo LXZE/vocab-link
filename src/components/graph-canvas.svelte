@@ -111,7 +111,7 @@
     let nodes: CustomNodeObject[] = [];
     let links: CustomLinkObject[] = [];
     const updateGraph = () => graphDrawer.graphData({ nodes, links });
-    graphDataObserver.subscribe(({ nodes: newNodes, links: newLinks }) => {
+    const graphSubscription = graphDataObserver.subscribe(({ nodes: newNodes, links: newLinks }) => {
       const { nodes: previousNode, links: previousLink } = graphDrawer.graphData();
       const previousNodeData = new Map(previousNode.map((node: CustomNodeObject) => [node.id! as string, node]));
       const previousLinkData = new Map(previousLink.map((link: CustomLinkObject) => [link.id!, link]));
@@ -127,6 +127,7 @@
     return () => {
       graphDrawer.pauseAnimation();
       graphDrawer.graphData({ nodes: [], links: [] });
+      graphSubscription.unsubscribe();
     };
   });
 </script>

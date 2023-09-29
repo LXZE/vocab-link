@@ -18,7 +18,8 @@
     // custom
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@test/*": ["./tests/*"],
     }
   },
   "include": [

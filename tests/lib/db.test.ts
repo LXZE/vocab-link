@@ -1,8 +1,11 @@
+import 'fake-indexeddb/auto';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { indexedDB, IDBKeyRange } from 'fake-indexeddb';
 
-import { DB, GraphDB, WordDB, type Node, type Edge } from '@/lib/graph-db';
+import { DB, graphDB as importGraph, WordDB } from '@/lib/graph-db';
+import type { GraphDB, Node, Edge } from '@/lib/graph-db';
 import { EdgeType, NodeType } from '@/utils/const';
+
+import { GraphDBTestHelper } from '@test/helpers/graph-helper';
 
 const graphTestNodes: Node[] = [
   { id: 'n1', type: NodeType.Word, text: 'text 1', createdAt: 0, },
@@ -17,34 +20,19 @@ const graphTestEdges: Edge[] = [
   { id: 'e3', sourceId: 'n1', targetId: 'n5', type: EdgeType.IsLanguage, createdAt: 0, },
 ];
 
-class GraphDBTestHelper {
-  graphDB!: GraphDB;
-
-  constructor(graphDB: GraphDB) {
-    this.graphDB = graphDB;
-  }
-
-  async addTestData() {
-    this.graphDB.db.nodes.bulkAdd(graphTestNodes);
-    this.graphDB.db.edges.bulkAdd(graphTestEdges);
-  }
-}
-
 describe('test Graph DB', () => {
   let graphDB: GraphDB;
   let helper: GraphDBTestHelper;
 
   beforeAll(() => {
-    const db = new DB({ indexedDB, IDBKeyRange });
-    graphDB = new GraphDB(db);
+    graphDB = importGraph;
     helper = new GraphDBTestHelper(graphDB);
+    helper.setNodes(graphTestNodes);
+    helper.setEdges(graphTestEdges);
   });
 
   beforeEach(async () => {
-    await Promise.all([
-      graphDB.db.nodes.clear(),
-      graphDB.db.edges.clear(),
-    ]);
+    await helper.clearDB();
   });
 
   // Create
@@ -53,26 +41,26 @@ describe('test Graph DB', () => {
     await expect(graphDB.getNodeFromId(newNode.id)).resolves.toEqual(newNode);
   });
   it('Can create new Edge and data stored in db', async () => {
-    await helper.addTestData();
+    await helper.initDB();
     const newEdge = await graphDB.createNewEdge(EdgeType.Means, 'n3', 'n4');
     await expect(graphDB.getAllEdges()).resolves.toContainEqual(newEdge);
   });
 
   // Read
   it('Can get graph for display correctly', async () => {
-    await helper.addTestData();
+    await helper.initDB();
     await expect(graphDB.getGraphForDisplay()).resolves.toMatchObject({
       nodes: graphTestNodes.filter(node => !['n4'].includes(node.id)),
       links: graphTestEdges.map(graphDB.marshalEdge),
     });
   });
   it('Can get Node from its id', async () => {
-    await helper.addTestData();
+    await helper.initDB();
     await expect(graphDB.getNodeFromId('n1')).resolves.toEqual(graphTestNodes[0]);
     await expect(graphDB.getNodeFromId('not_exist')).resolves.toEqual(undefined);
   });
   it('Can get all Nodes by its type correctly', async () => {
-    await helper.addTestData();
+    await helper.initDB();
     await expect(graphDB.getAllNodesByType(NodeType.Word)).resolves.toEqual(
       graphTestNodes.filter(node => node.type == NodeType.Word)
     );
@@ -81,7 +69,7 @@ describe('test Graph DB', () => {
     );
   });
   it('Can get Node\'s neighbor Nodes via nodeId', async () => {
-    await helper.addTestData();
+    await helper.initDB();
     const nodesWithEdgeDetail = [{
       ...graphTestNodes[2], // n2 connect to n3
       linkedEdgeId: 'e2',
@@ -91,19 +79,19 @@ describe('test Graph DB', () => {
       .resolves.toEqual(nodesWithEdgeDetail);
   });
   it('Can get All Edges', async () => {
-    await helper.addTestData();
+    await helper.initDB();
     await expect(graphDB.getAllEdges())
       .resolves.toEqual(graphTestEdges);
   });
   it('Can get List of Edges connected to Node ', async () => {
-    await helper.addTestData();
+    await helper.initDB();
     await expect(graphDB.getConnectedEdgesByNodeId('n1'))
       .resolves.toEqual(expect.arrayContaining(
         graphTestEdges.filter(edge => ['e1', 'e3'].includes(edge.id))
       ));
   });
   it('Can add detail to Node correctly', async () => {
-    await helper.addTestData();
+    await helper.initDB();
     graphDB.getNodeFromId('n1').then(async (node_1) => {
       await expect(graphDB.addDetailToNode(node_1!))
         .resolves.toEqual({
@@ -114,21 +102,21 @@ describe('test Graph DB', () => {
     });
   });
   it('Can add get 2nd degree neighbor', async () => {
-    await helper.addTestData();
+    await helper.initDB();
     await expect(graphDB.getSecondDegreeWordNeighbors('n1'))
       .resolves.toEqual([graphTestNodes[2]]);
   });
 
   // Update
   it('Can edit Node\'s text', async () => {
-    await helper.addTestData();
+    await helper.initDB();
     await expect(graphDB.editNodeText('n1', 'new text')).resolves.not.toThrowError();
     await expect(graphDB.getNodeFromId('n1')).resolves.toMatchObject({ text: 'new text' });
   });
 
   // Delete
   it('Can delete Node and all connected edges', async () => {
-    await helper.addTestData();
+    await helper.initDB();
     await expect(graphDB.deleteNodeAndConnectedEdges('n1')).resolves.not.toThrowError();
     await expect(graphDB.getNodeFromId('n1')).resolves.toBeUndefined();
     await expect(graphDB.getAllEdges()).resolves.toEqual(
@@ -136,14 +124,14 @@ describe('test Graph DB', () => {
     );
   });
   it('Can delete Edge', async () => {
-    await helper.addTestData();
+    await helper.initDB();
     await expect(graphDB.deleteEdge('e1')).resolves.not.toThrowError();
     await expect(graphDB.getAllEdges()).resolves.toEqual(
       graphTestEdges.filter(edge => !['e1'].includes(edge.id))
     );
   });
   it('Can delete Edge by given node id', async () => {
-    await helper.addTestData();
+    await helper.initDB();
     await expect(graphDB.deleteEdgeByNodesId('n1', 'n2')).resolves.toBe(1);
     await expect(graphDB.deleteEdgeByNodesId('n1', 'n3')).resolves.toBe(0);
     await expect(graphDB.getAllEdges()).resolves.toEqual(

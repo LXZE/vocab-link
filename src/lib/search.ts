@@ -14,7 +14,7 @@ interface IndexedNode extends Node {
 const KEY_INDEX = 'textPrepared';
 export let allWordIndex: IndexedNode[] = [];
 export let allRomanIndex: IndexedNode[] = [];
-const nodePrepareIndexMapFn = (node: Node): IndexedNode => ({ ...node,
+export const nodePrepareIndexMapFn = (node: Node): IndexedNode => ({ ...node,
   [KEY_INDEX]: fuzzysort.prepare(normalizeSync(node.text))
 });
 liveQuery(async () => await graphDB.getAllNodesByType(NodeType.Word))
@@ -30,7 +30,7 @@ const defaultOption: SearchOption = {
   limit: 10,
   excludeNodesId: [],
 };
-export const queryNodeByText = (queryText: string, indexedNodes: IndexedNode[], givenOptions: SearchOption) => {
+export const queryNodeByText = (queryText: string, indexedNodes: IndexedNode[], givenOptions?: SearchOption) => {
   const { limit, excludeNodesId: excludeWordsId } = { ...defaultOption, ...givenOptions };
   const existIds = new Set(excludeWordsId);
   const filtererIndex = indexedNodes.filter(word => !existIds.has(word.id));
