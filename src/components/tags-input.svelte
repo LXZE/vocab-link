@@ -29,6 +29,8 @@
   export let minimumChars = 1;
   export let tagType: NodeType;
   export let selectedTags: LinkedNode[] = [];
+  export let disableInput = false;
+  export let disableDelete = false;
 
   export let addingCallback: (_arg0: Node) => void = (_) => {};
   export let deletingCallback: (_arg1: LinkedNode) => void = (_arg1: LinkedNode) => {};
@@ -168,25 +170,30 @@
             }}
           >
             { Object.getOwnPropertyDescriptor(tag, autoCompleteObjectKey)?.value }
-            <span on:pointerdown={(ev) => {
-              ev.preventDefault();
-              ev.stopPropagation();
-              removeTag(idx);
-            }}>
-              <Icon icon={IconClose} width="20" />
-            </span>
+            {#if !disableDelete}
+              <span on:pointerdown={(ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                removeTag(idx);
+              }}>
+                <Icon icon={IconClose} width="20" />
+              </span>
+            {/if}
           </button>
         {/each}
       </div>
-      <input bind:this={inputElem}
-        autocomplete="off"
-        type="text"
-        placeholder={`Add ${inputLabel.toLowerCase()}...`}
-        bind:value={tagInput}
-        on:keydown={keydownHandler}
-        on:focus={focusHandler}
-        on:blur={blurHandler}
-      />
+      {#if !disableInput}
+        <input bind:this={inputElem}
+          disabled={disableInput}
+          autocomplete="off"
+          type="text"
+          placeholder={`Add ${inputLabel.toLowerCase()}...`}
+          bind:value={tagInput}
+          on:keydown={keydownHandler}
+          on:focus={focusHandler}
+          on:blur={blurHandler}
+        />
+      {/if}
     </div>
     {#if isFocused && tagInput.length >= minimumChars && candidateChoices.length > 0}
       <ul class='menu w-full max-w-md rounded-box bg-zinc-800 absolute z-10 border border-zinc-600'
@@ -218,6 +225,10 @@
   @apply border border-transparent rounded-sm;
   @apply bg-zinc-800;
 
+  &.focus {
+    @apply border border-zinc-600;
+  }
+
   .tags {
     @apply flex flex-wrap gap-1;
   }
@@ -228,14 +239,11 @@
   }
 
   input {
+    &:focus {
+      @apply outline-none;
+    }
     @apply mx-1 grow;
     background: unset;
   }
-  input:focus {
-    @apply outline-none;
-  }
-}
-.tags-input.focus {
-  @apply border border-zinc-600;
 }
 </style>

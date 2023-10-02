@@ -77,6 +77,11 @@ describe('test Graph DB', () => {
     await expect(graphDB.getNeighborsNodesByNodeId('n2'))
       .resolves.toEqual(nodesWithEdgeDetail);
   });
+  it('Can get source Nodes\' via target nodeId', async () => {
+    await helper.initDB();
+    await expect(graphDB.getSourceNodesFromTargetNode('n2'))
+      .resolves.toEqual([graphTestNodes[0]]); // n1 -> n2
+  });
   it('Can get All Edges', async () => {
     await helper.initDB();
     await expect(graphDB.getAllEdges())
@@ -131,7 +136,9 @@ describe('test Graph DB', () => {
   });
   it('Can delete Edge by given node id', async () => {
     await helper.initDB();
+    // test if edge exists and can delete
     await expect(graphDB.deleteEdgeByNodesId('n1', 'n2')).resolves.toBe(1);
+    // test if edge not exist and can handle it without raising error
     await expect(graphDB.deleteEdgeByNodesId('n1', 'n3')).resolves.toBe(0);
     await expect(graphDB.getAllEdges()).resolves.toEqual(
       graphTestEdges.filter(edge => !['e1'].includes(edge.id))

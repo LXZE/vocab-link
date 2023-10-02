@@ -24,12 +24,14 @@
   $: connectedNodes$ = liveQuery<LinkedNode[]>(async () => {
     if (currentEditorState == EditorState.WordSelected && $selectedNodeId != null) {
       return await graphDB.getNeighborsNodesByNodeId($selectedNodeId);
+    } else if (currentEditorState == EditorState.NonWordSelected && $selectedNodeId != null) {
+      return await graphDB.getSourceNodesFromTargetNode($selectedNodeId) as LinkedNode[];
     }
     return [];
   });
   $: languageSelected = $connectedNodes$ ? $connectedNodes$.filter(node => node.type == NodeType.Language).sort(nodeSortFn) : [];
   $: POSSelected = $connectedNodes$ ? $connectedNodes$.filter(node => node.type == NodeType.POS).sort(nodeSortFn) : [];
-  $: meansSelected = $connectedNodes$ ? $connectedNodes$.filter(node => node.type == NodeType.Word).sort(nodeSortFn) : [];
+  $: wordsSelected = $connectedNodes$ ? $connectedNodes$.filter(node => node.type == NodeType.Word).sort(nodeSortFn) : [];
   $: romanSelected = $connectedNodes$ ? $connectedNodes$.filter(node => node.type == NodeType.Roman).sort(nodeSortFn) : [];
 
   const meaningChoiceFn = async (queryText: string): Promise<Node[]> => {
@@ -40,7 +42,7 @@
 
     return queryNodeByText(queryText, allWordIndex, {
       limit: 10,
-      excludeNodesId: [...meansSelected.map(node => node.id), $selectedNodeId ?? '']
+      excludeNodesId: [...wordsSelected.map(node => node.id), $selectedNodeId ?? '']
     })
       .filter(node => node.id != $selectedNodeId)
       .map(node => ({ ...node, showText: node.text }));
@@ -122,7 +124,7 @@
       deletingCallback={delete1WayLinkHandler}
     />
 
-    <TagsInput selectedTags={meansSelected}
+    <TagsInput selectedTags={wordsSelected}
       inputLabel={'Meaning'} tagType={NodeType.Word}
       allowCreateNode allowTagClick
       choiceFunction={meaningChoiceFn}
@@ -159,6 +161,13 @@
       </div>
     {/if}
   </div>
+{:else if currentEditorState == EditorState.NonWordSelected}
+<div class="flex flex-col border border-zinc-700 rounded-sm px-4 pb-6">
+  <TagsInput selectedTags={wordsSelected}
+    inputLabel={'Word'} tagType={NodeType.Word}
+    allowTagClick disableInput disableDelete
+  />
+</div>
 {/if}
 
 

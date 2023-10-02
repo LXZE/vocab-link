@@ -128,6 +128,14 @@ export class GraphDB {
       })
       .filter((node): node is LinkedNode => node !== undefined);
   }
+  async getSourceNodesFromTargetNode(nodeId: string): Promise<Node[]> {
+    const connectedEdges = await this.db.edges
+      .where('targetId').equals(nodeId)
+      .toArray();
+    return (await this.db.nodes
+      .bulkGet(connectedEdges.map(edge => edge.sourceId ))
+    ).filter((maybeNode): maybeNode is Node => maybeNode != undefined);
+  }
 
   getAllEdges(): Promise<Edge[]> { return this.db.edges.toArray(); }
 
