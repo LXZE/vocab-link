@@ -30,7 +30,9 @@
   export let tagType: NodeType;
   export let selectedTags: LinkedNode[] = [];
   export let disableInput = false;
-  export let disableDelete = false;
+  export let disableRemoveTag = false;
+  export let maxTags = Infinity;
+
 
   export let addingCallback: (_arg0: Node) => void = (_) => {};
   export let deletingCallback: (_arg1: LinkedNode) => void = (_arg1: LinkedNode) => {};
@@ -96,6 +98,7 @@
     }
   };
   const addTag = (idx: number) => {
+    if (selectedTags.length >= maxTags) return;
     const selectedTag = candidateChoices[idx];
     if (selectedTag) {
       addingCallback(selectedTag);
@@ -164,6 +167,9 @@
 
 <div class='py-2'>
   <span>{inputLabel}</span>
+  {#if maxTags != Infinity}
+    <span class="text-sm underline text-zinc-500">Max links = {maxTags}</span>
+  {/if}
   <div class="flex flex-col gap-2 my-2 relative">
     <div class='tags-input' bind:this={inputLayout}>
       <div class="tags">
@@ -175,7 +181,7 @@
             }}
           >
             { Object.getOwnPropertyDescriptor(tag, autoCompleteObjectKey)?.value }
-            {#if !disableDelete}
+            {#if !disableRemoveTag}
               <span on:pointerdown={(ev) => {
                 ev.preventDefault();
                 ev.stopPropagation();

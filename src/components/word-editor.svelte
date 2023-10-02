@@ -29,21 +29,21 @@
     return [];
   });
 
+  // get selected tags
   const filterLinkedNodes = (filterFunction: (node: LinkedNode) => boolean) => $connectedNodes$
     .filter(filterFunction).sort(nodeSortFn);
-
   const languageFilterFn = (node: LinkedNode) => node.type == NodeType.Language;
   const POSFilterFn = (node: LinkedNode) => node.type == NodeType.POS;
   const wordFilterFn = (node: LinkedNode) => node.type == NodeType.Word && node.edgeType == EdgeType.Means;
   const antonymFilterFn = (node: LinkedNode) => node.type == NodeType.Word && node.edgeType == EdgeType.Antonym;
   const romanFilterFn = (node: LinkedNode) => node.type == NodeType.Roman;
-
   $: languageSelected = $connectedNodes$ ? filterLinkedNodes(languageFilterFn) : [];
   $: POSSelected = $connectedNodes$ ? filterLinkedNodes(POSFilterFn) : [];
   $: wordsSelected = $connectedNodes$ ? filterLinkedNodes(wordFilterFn) : [];
   $: antonymSelected = $connectedNodes$ ? filterLinkedNodes(antonymFilterFn) : [];
   $: romanSelected = $connectedNodes$ ? filterLinkedNodes(romanFilterFn) : [];
 
+  // suggestion  function
   const queryNodes = async (queryText: string, preparedIndexes: IndexedNode[]): Promise<Node[]> => {
     return queryNodeByText(queryText, preparedIndexes, {
       limit: 10,
@@ -52,7 +52,6 @@
       .filter(node => node.id != $selectedNodeId)
       .map(node => ({ ...node, showText: node.text }));
   };
-
   const meaningChoiceFn = async (queryText: string): Promise<Node[]> => {
     // if no query text then return connected nodes' neighbor for suggestion
     if (queryText == '' && $selectedNodeId)
@@ -189,7 +188,7 @@
   <TagsInput selectedTags={$connectedNodes$}
     inputLabel={'Word'} tagType={NodeType.Word}
     allowTagClick clickTagCallback={tagClickHandler}
-    disableInput disableDelete
+    disableInput disableRemoveTag
   />
 
   {#if isAllowDelete}
