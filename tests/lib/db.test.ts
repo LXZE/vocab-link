@@ -72,6 +72,7 @@ describe('test Graph DB', () => {
     const nodesWithEdgeDetail = [{
       ...graphTestNodes[2], // n2 connect to n3
       linkedEdgeId: 'e2',
+      edgeType: EdgeType.Means,
       edgeCreatedAt: 0,
     }];
     await expect(graphDB.getNeighborsNodesByNodeId('n2'))
@@ -79,8 +80,8 @@ describe('test Graph DB', () => {
   });
   it('Can get source Nodes\' via target nodeId', async () => {
     await helper.initDB();
-    await expect(graphDB.getSourceNodesFromTargetNode('n2'))
-      .resolves.toEqual([graphTestNodes[0]]); // n1 -> n2
+    await expect(graphDB.getNeighborsNodesByNodeId('n2', 'target'))
+      .resolves.toEqual([expect.objectContaining(graphTestNodes[0])]); // n1 -> n2
   });
   it('Can get All Edges', async () => {
     await helper.initDB();

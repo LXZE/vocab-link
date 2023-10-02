@@ -24,6 +24,7 @@ export const NodeTypeList = Object.values(NodeType);
 
 export enum EdgeType {
   Means = 'means',
+  Antonym = 'antonym',
   Is = 'is',
   IsPOS = 'is:pos',
   IsLanguage = 'is:language',
@@ -33,6 +34,7 @@ export enum EdgeType {
 export const EdgeTypeList = Object.values(EdgeType);
 export const twoWaysEdge = new Set([
   EdgeType.Means,
+  EdgeType.Antonym,
 ]);
 
 export enum EditorState {

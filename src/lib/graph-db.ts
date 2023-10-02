@@ -21,6 +21,7 @@ export interface NodeInfo {
 
 export interface LinkedNode extends Node {
   linkedEdgeId: string
+  edgeType: EdgeType | string
   edgeCreatedAt: number
 }
 
@@ -114,27 +115,26 @@ export class GraphDB {
       .toArray();
   }
 
-  async getNeighborsNodesByNodeId(nodeId: string): Promise<LinkedNode[]> {
+
+  async getNeighborsNodesByNodeId(nodeId: string, by: 'source' | 'target' = 'source'): Promise<LinkedNode[]> {
+    const [referenceKey, resultKey]: [keyof Edge, keyof Edge] = by == 'source'
+      ? ['sourceId', 'targetId'] : ['targetId', 'sourceId'];
     const connectedEdges = await this.db.edges
-      .where('sourceId').equals(nodeId)
+      .where(referenceKey).equals(nodeId)
       .toArray();
-    const connectedNodes = await this.db.nodes.bulkGet(connectedEdges.map(edge => edge.targetId));
+    const connectedNodes = await this.db.nodes.bulkGet(connectedEdges.map(edge => edge[resultKey]));
     return zip(connectedNodes, connectedEdges)
       .map(([node, edge]): LinkedNode | undefined => {
         if (node && edge) {
-          return {...node, linkedEdgeId: edge.id, edgeCreatedAt: edge.createdAt};
+          return { ...node,
+            linkedEdgeId: edge.id,
+            edgeType: edge.type,
+            edgeCreatedAt: edge.createdAt
+          };
         }
         return undefined;
       })
       .filter((node): node is LinkedNode => node !== undefined);
-  }
-  async getSourceNodesFromTargetNode(nodeId: string): Promise<Node[]> {
-    const connectedEdges = await this.db.edges
-      .where('targetId').equals(nodeId)
-      .toArray();
-    return (await this.db.nodes
-      .bulkGet(connectedEdges.map(edge => edge.sourceId ))
-    ).filter((maybeNode): maybeNode is Node => maybeNode != undefined);
   }
 
   getAllEdges(): Promise<Edge[]> { return this.db.edges.toArray(); }
@@ -201,7 +201,7 @@ export class GraphDB {
     const secondDegreeNodesId = Array.from(new Set(
       (await this.db.edges
         .where('sourceId').anyOf(neighborWordsNode.map(node => node.id))
-        .and(edge => edge.targetId != nodeId)
+        .and(edge => edge.targetId != nodeId && edge.type == EdgeType.Means)
         .toArray()
       )
         .map(edge => edge.targetId)

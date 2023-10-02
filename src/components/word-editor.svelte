@@ -11,7 +11,7 @@
   import { NodeType, EditorState, EdgeType } from '@/utils/const';
   import { graphDB, wordDB } from '@/lib/graph-db';
   import type { Node, CustomNodeObject, LinkedNode } from '@/lib/graph-db';
-  import { nodeSortFn } from '@/lib/utils';
+  import { nodeSortFn, normalizeWord } from '@/lib/utils';
 
   const getEditorStatus = (node?: CustomNodeObject): EditorState => {
     if (!node) return EditorState.NoWordSelected;
@@ -19,33 +19,48 @@
     return EditorState.WordSelected;
   };
   $: currentEditorState = getEditorStatus($selectedNode);
-  $: isAllowDelete = [NodeType.Word, NodeType.Roman].includes($selectedNode?.type as NodeType);
+  $: isAllowDelete = [NodeType.Word, NodeType.Roman]
+    .includes($selectedNode?.type as NodeType);
 
   $: connectedNodes$ = liveQuery<LinkedNode[]>(async () => {
     if (currentEditorState == EditorState.WordSelected && $selectedNodeId != null) {
       return await graphDB.getNeighborsNodesByNodeId($selectedNodeId);
     } else if (currentEditorState == EditorState.NonWordSelected && $selectedNodeId != null) {
-      return await graphDB.getSourceNodesFromTargetNode($selectedNodeId) as LinkedNode[];
+      return await graphDB.getNeighborsNodesByNodeId($selectedNodeId, 'target');
     }
     return [];
   });
-  $: languageSelected = $connectedNodes$ ? $connectedNodes$.filter(node => node.type == NodeType.Language).sort(nodeSortFn) : [];
-  $: POSSelected = $connectedNodes$ ? $connectedNodes$.filter(node => node.type == NodeType.POS).sort(nodeSortFn) : [];
-  $: wordsSelected = $connectedNodes$ ? $connectedNodes$.filter(node => node.type == NodeType.Word).sort(nodeSortFn) : [];
-  $: romanSelected = $connectedNodes$ ? $connectedNodes$.filter(node => node.type == NodeType.Roman).sort(nodeSortFn) : [];
 
-  const meaningChoiceFn = async (queryText: string): Promise<Node[]> => {
-    if (queryText == '' && $selectedNodeId) {
-      // if no query text then return connected nodes' neighbor for suggestion
-      return await graphDB.getSecondDegreeWordNeighbors($selectedNodeId);
-    }
+  const filterLinkedNodes = (filterFunction: (node: LinkedNode) => boolean) => $connectedNodes$
+    .filter(filterFunction).sort(nodeSortFn);
 
+  const languageFilterFn = (node: LinkedNode) => node.type == NodeType.Language;
+  const POSFilterFn = (node: LinkedNode) => node.type == NodeType.POS;
+  const wordFilterFn = (node: LinkedNode) => node.type == NodeType.Word && node.edgeType == EdgeType.Means;
+  const antonymFilterFn = (node: LinkedNode) => node.type == NodeType.Word && node.edgeType == EdgeType.Antonym;
+  const romanFilterFn = (node: LinkedNode) => node.type == NodeType.Roman;
+
+  $: languageSelected = $connectedNodes$ ? filterLinkedNodes(languageFilterFn) : [];
+  $: POSSelected = $connectedNodes$ ? filterLinkedNodes(POSFilterFn) : [];
+  $: wordsSelected = $connectedNodes$ ? filterLinkedNodes(wordFilterFn) : [];
+  $: antonymSelected = $connectedNodes$ ? filterLinkedNodes(antonymFilterFn) : [];
+  $: romanSelected = $connectedNodes$ ? filterLinkedNodes(romanFilterFn) : [];
+
+  const wordChoiceFn = async (queryText: string): Promise<Node[]> => {
     return queryNodeByText(queryText, allWordIndex, {
       limit: 10,
       excludeNodesId: [...wordsSelected.map(node => node.id), $selectedNodeId ?? '']
     })
       .filter(node => node.id != $selectedNodeId)
       .map(node => ({ ...node, showText: node.text }));
+  };
+
+  const meaningChoiceFn = async (queryText: string): Promise<Node[]> => {
+    if (queryText == '' && $selectedNodeId) {
+      // if no query text then return connected nodes' neighbor for suggestion
+      return await graphDB.getSecondDegreeWordNeighbors($selectedNodeId);
+    }
+    return wordChoiceFn(queryText);
   };
 
   const romanChoiceFn = async (queryText: string): Promise<Node[]> => {
@@ -58,15 +73,18 @@
   };
 
 
-  const linkNodeHandler = (edgeType: EdgeType, nodeType: NodeType, isTwoWay = false) => async (toLinkNode: Node) => {
+  const linkNodeHandler = (
+    edgeType: EdgeType, nodeType: NodeType,
+    direction: 'one-way' | 'two-way' = 'one-way'
+  ) => async (toLinkNode: Node) => {
     if ($selectedNodeId) {
       if (toLinkNode.id == '') {
-        const newNode = await graphDB.createNewNode(nodeType, toLinkNode.text);
+        const newNode = await graphDB.createNewNode(nodeType, normalizeWord(toLinkNode.text));
         await graphDB.createNewEdge(edgeType, $selectedNodeId!, newNode.id);
-        if (isTwoWay) await graphDB.createNewEdge(edgeType, newNode.id, $selectedNodeId!);
+        if (direction == 'two-way') await graphDB.createNewEdge(edgeType, newNode.id, $selectedNodeId!);
       } else {
         await graphDB.createNewEdge(edgeType, $selectedNodeId!, toLinkNode.id);
-        if (isTwoWay) await graphDB.createNewEdge(edgeType, toLinkNode.id, $selectedNodeId!);
+        if (direction == 'two-way') await graphDB.createNewEdge(edgeType, toLinkNode.id, $selectedNodeId!);
       }
       $selectedNode = $selectedNode; // trigger graph
     }
@@ -128,7 +146,16 @@
       inputLabel={'Meaning'} tagType={NodeType.Word}
       allowCreateNode allowTagClick
       choiceFunction={meaningChoiceFn}
-      addingCallback={linkNodeHandler(EdgeType.Means, NodeType.Word, true)}
+      addingCallback={linkNodeHandler(EdgeType.Means, NodeType.Word, 'two-way')}
+      deletingCallback={delete2WayLinkHandler}
+      minimumChars={0}
+    />
+
+    <TagsInput selectedTags={antonymSelected}
+      inputLabel={'Antonym'} tagType={NodeType.Word}
+      allowCreateNode allowTagClick
+      choiceFunction={wordChoiceFn}
+      addingCallback={linkNodeHandler(EdgeType.Antonym, NodeType.Word, 'two-way')}
       deletingCallback={delete2WayLinkHandler}
       minimumChars={0}
     />
@@ -163,10 +190,18 @@
   </div>
 {:else if currentEditorState == EditorState.NonWordSelected}
 <div class="flex flex-col border border-zinc-700 rounded-sm px-4 pb-6">
-  <TagsInput selectedTags={wordsSelected}
+  <TagsInput selectedTags={$connectedNodes$}
     inputLabel={'Word'} tagType={NodeType.Word}
     allowTagClick disableInput disableDelete
   />
+
+  {#if isAllowDelete}
+    <div class="flex">
+      <button class="btn btn-error" on:click={openDialog}>
+        Delete
+      </button>
+    </div>
+  {/if}
 </div>
 {/if}
 

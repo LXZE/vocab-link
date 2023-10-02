@@ -14,6 +14,8 @@ export const graphSetup = (graphInstance: ForceGraphInstance) => {
 
   graphInstance
     .autoPauseRedraw(false)
+    .minZoom(0.5)
+    .maxZoom(10)
     .linkColor((link: CustomLinkObject) => {
       return graphEdgeColors.get(link.type!) ?? '#FFFFFF';
     })

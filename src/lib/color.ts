@@ -18,6 +18,7 @@ export const graphNodeHighlightColors = new Map<string, string>([
 
 export const graphEdgeColors = new Map<string, string>([
   [EdgeType.Means, '#FDF4F5'],
+  [EdgeType.Antonym, '#C70039'],
   [EdgeType.Romanization, '#EAC696'],
   [EdgeType.IsLanguage, '#7EAA92'],
   [EdgeType.IsPOS, '#9F91CC'],

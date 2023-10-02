@@ -49,7 +49,7 @@
   {#if isEditWord}
     <input type="text" class="input input-bordered max-w-xs" bind:value={editWord} />
   {:else}
-    <span class='text-md'>{editorStatusText}</span>
+    <span class='text-lg'>{editorStatusText}</span>
   {/if}
 
   <div class="flex gap-2">

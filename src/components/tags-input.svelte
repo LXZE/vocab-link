@@ -22,7 +22,7 @@
   export let allowTagClick = false;
 
   /** if allowCreateNode is true, the choice function must be provided */
-  export let choiceFunction: (_queryText: string) => Promise<Node[]> = async (_) => [];
+  export let choiceFunction: ((_queryText: string) => Promise<Node[]>) | undefined = undefined;
 
   export let inputLabel = '';
   export let autoCompleteObjectKey = 'showText';
@@ -53,9 +53,13 @@
 
   // word candidate choices
   const internalAutoCompleteFn = async (queryText: string): Promise<TagChoices[]> => {
+    if (allowCreateNode && choiceFunction === undefined) {
+      throw Error('choiceFunction not provided when allowCreateNode set to true');
+    }
+
     const normalizedQueryText = normalizeWord(queryText);
 
-    const result = (await choiceFunction(queryText))
+    const result = (await choiceFunction!(queryText))
       .map<TagChoices>(choice => ({...choice, showText: choice.text}));
 
     if (allowCreateNode && // allow create new word
@@ -75,12 +79,12 @@
   let candidateChoices: TagChoices[] = [];
   const setCandidateChoices = debounce(async () => {
     if (tagInput.length < minimumChars) return;
-    if (allowCreateNode) {
-      candidateChoices = await internalAutoCompleteFn(tagInput);
-    } else {
-      candidateChoices = remainChoices
-        .filter(choice => choice.text.toLowerCase().includes(tagInput.toLowerCase()));
-    }
+
+    candidateChoices = allowCreateNode
+      ? await internalAutoCompleteFn(tagInput)
+      : remainChoices.filter(choice =>
+        choice.text.toLowerCase().includes(tagInput.toLowerCase())
+      );
   }, 100, { trailing: true, maxWait: 200 });
   $: (tagInput, internalSelectedTags), setCandidateChoices();
 
@@ -113,13 +117,13 @@
   let inputElem: HTMLInputElement;
   let isFocused = false;
   const focusHandler = () => {
-    inputLayout.classList.add('focus');
+    if (inputLayout) inputLayout.classList.add('focus');
     setCandidateChoices();
     isFocused = true;
   };
   const blurHandler = () => {
-    inputLayout.classList.remove('focus');
-    inputElem.blur();
+    if (inputLayout) inputLayout.classList.remove('focus');
+    if (inputElem) inputElem.blur();
     candidateChoices = [];
     isFocused = false;
   };

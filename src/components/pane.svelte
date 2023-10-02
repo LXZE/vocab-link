@@ -40,7 +40,7 @@
 >
 	<Pane minSize={30} bind:size={lPaneSize}>
     <div class="flex flex-col p-4 gap-4 h-[100vh] overflow-y-auto">
-      <span class='w-full text-center p-2 text-xl'>Word Editor</span>
+      <span class='w-full p-2 text-center text-2xl'>Word Editor</span>
       {#if dev}
         <div class="flex justify-center">
           <button class="btn" on:click={() => init_db(graphDB.db)}>
