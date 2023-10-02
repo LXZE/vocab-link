@@ -7,7 +7,7 @@
   import ConfirmDialog from '@/components/confirm-dialog.svelte';
 
   import { selectedNode, selectedNodeId } from '@/lib/store';
-  import { queryNodeByText, allWordIndex, allRomanIndex } from '@/lib/search';
+  import { queryNodeByText, allWordIndex, allRomanIndex, type IndexedNode } from '@/lib/search';
   import { NodeType, EditorState, EdgeType } from '@/utils/const';
   import { graphDB, wordDB } from '@/lib/graph-db';
   import type { Node, CustomNodeObject, LinkedNode } from '@/lib/graph-db';
@@ -19,15 +19,13 @@
     return EditorState.WordSelected;
   };
   $: currentEditorState = getEditorStatus($selectedNode);
-  $: isAllowDelete = [NodeType.Word, NodeType.Roman]
-    .includes($selectedNode?.type as NodeType);
+  $: isAllowDelete = [NodeType.Word, NodeType.Roman].includes($selectedNode?.type as NodeType);
 
   $: connectedNodes$ = liveQuery<LinkedNode[]>(async () => {
-    if (currentEditorState == EditorState.WordSelected && $selectedNodeId != null) {
+    if (currentEditorState == EditorState.WordSelected && $selectedNodeId)
       return await graphDB.getNeighborsNodesByNodeId($selectedNodeId);
-    } else if (currentEditorState == EditorState.NonWordSelected && $selectedNodeId != null) {
+    if (currentEditorState == EditorState.NonWordSelected && $selectedNodeId)
       return await graphDB.getNeighborsNodesByNodeId($selectedNodeId, 'target');
-    }
     return [];
   });
 
@@ -46,8 +44,8 @@
   $: antonymSelected = $connectedNodes$ ? filterLinkedNodes(antonymFilterFn) : [];
   $: romanSelected = $connectedNodes$ ? filterLinkedNodes(romanFilterFn) : [];
 
-  const wordChoiceFn = async (queryText: string): Promise<Node[]> => {
-    return queryNodeByText(queryText, allWordIndex, {
+  const queryNodes = async (queryText: string, preparedIndexes: IndexedNode[]): Promise<Node[]> => {
+    return queryNodeByText(queryText, preparedIndexes, {
       limit: 10,
       excludeNodesId: [...wordsSelected.map(node => node.id), $selectedNodeId ?? '']
     })
@@ -56,22 +54,11 @@
   };
 
   const meaningChoiceFn = async (queryText: string): Promise<Node[]> => {
-    if (queryText == '' && $selectedNodeId) {
-      // if no query text then return connected nodes' neighbor for suggestion
+    // if no query text then return connected nodes' neighbor for suggestion
+    if (queryText == '' && $selectedNodeId)
       return await graphDB.getSecondDegreeWordNeighbors($selectedNodeId);
-    }
-    return wordChoiceFn(queryText);
+    return queryNodes(queryText, allWordIndex);
   };
-
-  const romanChoiceFn = async (queryText: string): Promise<Node[]> => {
-    return queryNodeByText(queryText, allRomanIndex, {
-      limit: 10,
-      excludeNodesId: [...romanSelected.map(node => node.id), $selectedNodeId ?? '']
-    })
-      .filter(node => node.id != $selectedNodeId)
-      .map(node => ({ ...node, showText: node.text }));
-  };
-
 
   const linkNodeHandler = (
     edgeType: EdgeType, nodeType: NodeType,
@@ -107,6 +94,10 @@
     }
   };
 
+  const tagClickHandler = async (clickedNode: Node) => {
+    selectedNode.set(clickedNode);
+  }
+
   let openDialog: () => void;
   const deleteWordHandler = async () => {
     const toDeleteNodeId = $selectedNodeId ?? '';
@@ -132,19 +123,22 @@
   <div class="flex flex-col border border-zinc-700 rounded-sm px-4 pb-6">
     <TagsInput bind:selectedTags={languageSelected}
       inputLabel={'Language'} tagType={NodeType.Language}
+      allowTagClick clickTagCallback={tagClickHandler}
       addingCallback={linkNodeHandler(EdgeType.IsLanguage, NodeType.Language)}
       deletingCallback={delete1WayLinkHandler}
     />
 
     <TagsInput selectedTags={POSSelected}
       inputLabel={'Part of speech'} tagType={NodeType.POS}
+      allowTagClick clickTagCallback={tagClickHandler}
       addingCallback={linkNodeHandler(EdgeType.IsPOS, NodeType.POS)}
       deletingCallback={delete1WayLinkHandler}
     />
 
     <TagsInput selectedTags={wordsSelected}
       inputLabel={'Meaning'} tagType={NodeType.Word}
-      allowCreateNode allowTagClick
+      allowCreateNode
+      allowTagClick clickTagCallback={tagClickHandler}
       choiceFunction={meaningChoiceFn}
       addingCallback={linkNodeHandler(EdgeType.Means, NodeType.Word, 'two-way')}
       deletingCallback={delete2WayLinkHandler}
@@ -153,8 +147,9 @@
 
     <TagsInput selectedTags={antonymSelected}
       inputLabel={'Antonym'} tagType={NodeType.Word}
-      allowCreateNode allowTagClick
-      choiceFunction={wordChoiceFn}
+      allowCreateNode
+      allowTagClick clickTagCallback={tagClickHandler}
+      choiceFunction={(queryText) => queryNodes(queryText, allWordIndex)}
       addingCallback={linkNodeHandler(EdgeType.Antonym, NodeType.Word, 'two-way')}
       deletingCallback={delete2WayLinkHandler}
       minimumChars={0}
@@ -163,8 +158,9 @@
     {#if isExceedLatin}
       <TagsInput selectedTags={romanSelected}
         inputLabel={'Romanization'} tagType={NodeType.Roman}
-        allowCreateNode allowTagClick
-        choiceFunction={romanChoiceFn}
+        allowCreateNode
+        allowTagClick clickTagCallback={tagClickHandler}
+        choiceFunction={(queryText) => queryNodes(queryText, allRomanIndex)}
         addingCallback={linkNodeHandler(EdgeType.Romanization, NodeType.Roman)}
         deletingCallback={delete1WayLinkHandler}
       />
@@ -192,7 +188,8 @@
 <div class="flex flex-col border border-zinc-700 rounded-sm px-4 pb-6">
   <TagsInput selectedTags={$connectedNodes$}
     inputLabel={'Word'} tagType={NodeType.Word}
-    allowTagClick disableInput disableDelete
+    allowTagClick clickTagCallback={tagClickHandler}
+    disableInput disableDelete
   />
 
   {#if isAllowDelete}

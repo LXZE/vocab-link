@@ -7,7 +7,7 @@ import { graphDB } from '@/lib/graph-db';
 import type { Node } from '@/lib/graph-db';
 import type Fuzzysort from 'fuzzysort';
 
-interface IndexedNode extends Node {
+export interface IndexedNode extends Node {
   textPrepared: Fuzzysort.Prepared;
 }
 

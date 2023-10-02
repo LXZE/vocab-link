@@ -34,6 +34,7 @@
 
   export let addingCallback: (_arg0: Node) => void = (_) => {};
   export let deletingCallback: (_arg1: LinkedNode) => void = (_arg1: LinkedNode) => {};
+  export let clickTagCallback: (_arg0: Node) => void = (_) => {};
 
   $: internalSelectedTags = selectedTags.map(tag => ({ ...tag, showText: tag.text }));
 
@@ -89,8 +90,10 @@
   $: (tagInput, internalSelectedTags), setCandidateChoices();
 
   const tagClickHandler = (tag: TagChoices) => {
-    selectedNode.set(tag);
-    blurHandler();
+    if (allowTagClick) {
+      blurHandler();
+      clickTagCallback(tag)
+    }
   };
   const addTag = (idx: number) => {
     const selectedTag = candidateChoices[idx];
@@ -168,9 +171,7 @@
           <button class={`tag ${allowTagClick ? 'cursor-pointer' : 'cursor-auto'}`}
             on:pointerdown={(ev) => {
               ev.preventDefault();
-              if (allowTagClick) {
-                tagClickHandler(tag);
-              }
+              tagClickHandler(tag);
             }}
           >
             { Object.getOwnPropertyDescriptor(tag, autoCompleteObjectKey)?.value }
