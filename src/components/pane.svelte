@@ -1,4 +1,5 @@
 <script lang='ts'>
+  import { onMount } from 'svelte';
   import { get } from 'svelte/store';
   import { Pane, Splitpanes } from 'svelte-splitpanes';
 
@@ -11,7 +12,19 @@
   import { graphDB } from '@/lib/graph-db';
   import { init_db, clear_db } from '@/utils/db-action';
 
-  let dev = true;
+  let MINIMUM_EDITOR_WIDTH = 500; // px
+  let screenSize: number;
+  $: screenSize, resizeHandler();
+  let minLPaneSize = 30; // Percentage
+  const calculateRequiredEditorPercentage = (screenSize: number) => {
+    return MINIMUM_EDITOR_WIDTH / screenSize * 100;
+  }
+  const resizeHandler = () => {
+    minLPaneSize = calculateRequiredEditorPercentage(screenSize);
+    if (lPaneSize < minLPaneSize)
+      lPaneSize = minLPaneSize;
+  }
+  onMount(() => resizeHandler());
 
   let lPaneSize = get(leftPaneSize);
   $: lPaneSize, leftPaneSize.set(lPaneSize);
@@ -38,10 +51,10 @@
 <Splitpanes dblClickSplitter={false} theme='custom-theme'
   on:splitter-click={resetPaneSize}
 >
-	<Pane minSize={30} bind:size={lPaneSize}>
-    <div class="flex flex-col p-4 gap-4 h-[100vh] overflow-y-auto">
+	<Pane bind:minSize={minLPaneSize} bind:size={lPaneSize}>
+    <div id="editor-pane" class="flex flex-col p-4 gap-4 h-[100vh] overflow-y-auto">
       <span class='w-full p-2 text-center text-2xl'>Word Editor</span>
-      {#if dev}
+      {#if import.meta.env.DEV}
         <div class="flex justify-center">
           <button class="btn" on:click={() => init_db(graphDB.db)}>
             INIT DB
@@ -64,3 +77,11 @@
     </div>
   </Pane>
 </Splitpanes>
+
+<svelte:window bind:innerWidth={screenSize} />
+
+<style lang='postcss'>
+#editor-pane {
+  scrollbar-width: thin;
+}
+</style>

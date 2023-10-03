@@ -11,7 +11,6 @@
   import Icon from '@iconify/svelte';
   import IconClose from '@iconify/icons-material-symbols/close';
 
-  import { selectedNode } from '@/lib/store';
   import { graphDB } from '@/lib/graph-db';
   import type { Node, LinkedNode } from '@/lib/graph-db';
   import { NodeType } from '@/utils/const';
@@ -25,6 +24,7 @@
   export let choiceFunction: ((_queryText: string) => Promise<Node[]>) | undefined = undefined;
 
   export let inputLabel = '';
+  export let hideLabel = false;
   export let autoCompleteObjectKey = 'showText';
   export let minimumChars = 1;
   export let tagType: NodeType;
@@ -32,7 +32,7 @@
   export let disableInput = false;
   export let disableRemoveTag = false;
   export let maxTags = Infinity;
-
+  export let hideMaxTags = false;
 
   export let addingCallback: (_arg0: Node) => void = (_) => {};
   export let deletingCallback: (_arg1: LinkedNode) => void = (_arg1: LinkedNode) => {};
@@ -165,37 +165,42 @@
 
 </script>
 
-<div class='py-2'>
-  <span>{inputLabel}</span>
-  {#if maxTags != Infinity}
+<div class={`py-2 min-w-0 ${$$props.class}`}>
+  {#if !hideLabel}
+    <span>{inputLabel}</span>
+  {/if}
+  {#if !hideMaxTags && maxTags != Infinity}
     <span class="text-sm underline text-zinc-500">Max links = {maxTags}</span>
   {/if}
   <div class="flex flex-col gap-2 my-2 relative">
     <div class='tags-input' bind:this={inputLayout}>
-      <div class="tags">
-        {#each internalSelectedTags as tag, idx}
-          <button class={`tag ${allowTagClick ? 'cursor-pointer' : 'cursor-auto'}`}
-            on:pointerdown={(ev) => {
-              ev.preventDefault();
-              tagClickHandler(tag);
-            }}
-          >
-            { Object.getOwnPropertyDescriptor(tag, autoCompleteObjectKey)?.value }
-            {#if !disableRemoveTag}
-              <span on:pointerdown={(ev) => {
+      {#if internalSelectedTags.length > 0}
+        <div class="tags">
+          {#each internalSelectedTags as tag, idx}
+            <button class={`tag ${allowTagClick ? 'cursor-pointer' : 'cursor-auto'}`}
+              on:pointerdown={(ev) => {
                 ev.preventDefault();
-                ev.stopPropagation();
-                removeTag(idx);
-              }}>
-                <Icon icon={IconClose} width="20" />
-              </span>
-            {/if}
-          </button>
-        {/each}
-      </div>
+                tagClickHandler(tag);
+              }}
+            >
+              { Object.getOwnPropertyDescriptor(tag, autoCompleteObjectKey)?.value }
+              {#if !disableRemoveTag}
+                <span on:pointerdown={(ev) => {
+                  ev.preventDefault();
+                  ev.stopPropagation();
+                  removeTag(idx);
+                }}>
+                  <Icon icon={IconClose} width="20" />
+                </span>
+              {/if}
+            </button>
+          {/each}
+        </div>
+      {/if}
       {#if !disableInput}
         <input bind:this={inputElem}
-          disabled={disableInput}
+          size={15}
+          disabled={internalSelectedTags.length >= maxTags}
           autocomplete="off"
           type="text"
           placeholder={`Add ${inputLabel.toLowerCase()}...`}
@@ -232,7 +237,7 @@
 
 <style lang='postcss'>
 .tags-input {
-  @apply flex flex-wrap gap-2 items-center content-center p-2;
+  @apply flex flex-wrap gap-2 p-2;
   @apply border border-transparent rounded-sm;
   @apply bg-zinc-800;
 
@@ -250,10 +255,11 @@
   }
 
   input {
+    @apply mx-1;
+
     &:focus {
       @apply outline-none;
     }
-    @apply mx-1 grow;
     background: unset;
   }
 }

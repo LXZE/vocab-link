@@ -5,6 +5,7 @@
   import WordNote from '@/components/word-note.svelte';
   import EditorLabel from '@/components/editor-label.svelte';
   import ConfirmDialog from '@/components/confirm-dialog.svelte';
+  import WordForm from '@/components/word-form.svelte';
 
   import { selectedNode, selectedNodeId } from '@/lib/store';
   import { queryNodeByText, allWordIndex, allRomanIndex, type IndexedNode } from '@/lib/search';
@@ -34,12 +35,12 @@
     .filter(filterFunction).sort(nodeSortFn);
   const languageFilterFn = (node: LinkedNode) => node.type == NodeType.Language;
   const POSFilterFn = (node: LinkedNode) => node.type == NodeType.POS;
-  const wordFilterFn = (node: LinkedNode) => node.type == NodeType.Word && node.edgeType == EdgeType.Means;
+  const meaningFilterFn = (node: LinkedNode) => node.type == NodeType.Word && node.edgeType == EdgeType.Means;
   const antonymFilterFn = (node: LinkedNode) => node.type == NodeType.Word && node.edgeType == EdgeType.Antonym;
   const romanFilterFn = (node: LinkedNode) => node.type == NodeType.Roman;
   $: languageSelected = $connectedNodes$ ? filterLinkedNodes(languageFilterFn) : [];
   $: POSSelected = $connectedNodes$ ? filterLinkedNodes(POSFilterFn) : [];
-  $: wordsSelected = $connectedNodes$ ? filterLinkedNodes(wordFilterFn) : [];
+  $: meaningSelected = $connectedNodes$ ? filterLinkedNodes(meaningFilterFn) : [];
   $: antonymSelected = $connectedNodes$ ? filterLinkedNodes(antonymFilterFn) : [];
   $: romanSelected = $connectedNodes$ ? filterLinkedNodes(romanFilterFn) : [];
 
@@ -47,10 +48,9 @@
   const queryNodes = async (queryText: string, preparedIndexes: IndexedNode[]): Promise<Node[]> => {
     return queryNodeByText(queryText, preparedIndexes, {
       limit: 10,
-      excludeNodesId: [...wordsSelected.map(node => node.id), $selectedNodeId ?? '']
+      excludeNodesId: [...meaningSelected.map(node => node.id), $selectedNodeId ?? '']
     })
-      .filter(node => node.id != $selectedNodeId)
-      .map(node => ({ ...node, showText: node.text }));
+      .filter(node => node.id != $selectedNodeId);
   };
   const meaningChoiceFn = async (queryText: string): Promise<Node[]> => {
     // if no query text then return connected nodes' neighbor for suggestion
@@ -118,7 +118,7 @@
 </div>
 
 
-{#if currentEditorState == EditorState.WordSelected}
+{#if currentEditorState == EditorState.WordSelected && $selectedNode}
   <div class="flex flex-col border border-zinc-700 rounded-sm px-4 pb-6">
     <TagsInput bind:selectedTags={languageSelected}
       inputLabel={'Language'} tagType={NodeType.Language}
@@ -134,7 +134,7 @@
       deletingCallback={delete1WayLinkHandler}
     />
 
-    <TagsInput selectedTags={wordsSelected}
+    <TagsInput selectedTags={meaningSelected}
       inputLabel={'Meaning'} tagType={NodeType.Word}
       allowCreateNode
       allowTagClick clickTagCallback={tagClickHandler}
@@ -164,6 +164,9 @@
         deletingCallback={delete1WayLinkHandler}
       />
     {/if}
+
+    <WordForm selectedNode={$selectedNode}
+    />
 
     <div class="collapse collapse-arrow mb-2">
       <input type="checkbox" />

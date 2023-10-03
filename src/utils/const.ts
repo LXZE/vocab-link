@@ -28,6 +28,7 @@ export enum EdgeType {
   Is = 'is',
   IsPOS = 'is:pos',
   IsLanguage = 'is:language',
+  IsForm = 'is:form',
   Romanization = 'romanize'
 }
 
@@ -35,6 +36,7 @@ export const EdgeTypeList = Object.values(EdgeType);
 export const twoWaysEdge = new Set([
   EdgeType.Means,
   EdgeType.Antonym,
+  EdgeType.IsForm,
 ]);
 
 export enum EditorState {

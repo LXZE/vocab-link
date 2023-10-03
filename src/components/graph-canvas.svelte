@@ -21,7 +21,7 @@
   export let toggleGraphViewerFn: (_arg: boolean) => void;
 
   let canvas: HTMLElement;
-  const handleResized = debounce((ev: HTMLElement) => {
+  const resizeHandler = debounce((ev: HTMLElement) => {
     graphDrawer
       .width(ev.clientWidth)
       .height(ev.clientHeight);
@@ -46,6 +46,10 @@
     graphDrawer.zoom(zoomLevel, 500);
   };
   const recenter = () => graphDrawer.zoomToFit(500, 20);
+
+  let nodes: CustomNodeObject[] = [];
+  let links: CustomLinkObject[] = [];
+  const updateGraph = () => graphDrawer.graphData({ nodes, links });
 
   const highlightNodes = new Set<string>();
   const highlightEdges = new Set<string>();
@@ -107,11 +111,8 @@
         node.__rectDimension && ctx.fillRect(...node.__rectDimension);
       });
 
-    const graphDataObserver = liveQuery(async () => await graphDB.getGraphForDisplay());
-    let nodes: CustomNodeObject[] = [];
-    let links: CustomLinkObject[] = [];
-    const updateGraph = () => graphDrawer.graphData({ nodes, links });
-    const graphSubscription = graphDataObserver.subscribe(({ nodes: newNodes, links: newLinks }) => {
+    const graphData$ = liveQuery(async () => await graphDB.getGraphForDisplay());
+    const graphSubscription = graphData$.subscribe(({ nodes: newNodes, links: newLinks }) => {
       const { nodes: previousNode, links: previousLink } = graphDrawer.graphData();
       const previousNodeData = new Map(previousNode.map((node: CustomNodeObject) => [node.id! as string, node]));
       const previousLinkData = new Map(previousLink.map((link: CustomLinkObject) => [link.id!, link]));
@@ -133,7 +134,7 @@
 </script>
 
 <div class="border border-slate-800 h-full w-full"
-  use:watchResize={handleResized}
+  use:watchResize={resizeHandler}
 >
   <div class="relative z-10">
     <ul class="absolute top-4 right-4 menu menu-horizontal bg-base-200 rounded-box">

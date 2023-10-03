@@ -15,7 +15,7 @@
   $: {
     switch(currentEditorState) {
     case EditorState.NoWordSelected:
-      editorStatusText = 'Try to search a word or select in graph'; break;
+      editorStatusText = 'Try to search, create a word or select in graph'; break;
     case EditorState.WordSelected:
       editorStatusText = `Word: ${ $selectedNode!.text }`; break;
     case EditorState.NonWordSelected:
