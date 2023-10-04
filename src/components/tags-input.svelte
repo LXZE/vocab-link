@@ -1,9 +1,3 @@
-<script lang='ts' context='module'>
-  export interface TagChoice extends Node {
-    showText: string;
-  }
-</script>
-
 <script lang='ts'>
   import { onMount } from 'svelte';
   import { debounce } from 'lodash';
@@ -16,7 +10,9 @@
   import { NodeType } from '@/utils/const';
   import { normalizeWord } from '@/lib/utils';
 
-  /** if true, allow component to generate new node instead of select the exist node (must provide choiceFunction) */
+  type TagChoice = Node & { showText: string }
+
+  /** if true, allow component to generate new node instead of only select the exist node (must provide choiceFunction) */
   export let allowCreateNode = false;
   export let allowTagClick = false;
 
@@ -38,6 +34,7 @@
   export let hideMaxTags = false;
 
   export let addingCallback: (_arg0: Node) => any = (_) => {};
+  /** if selectedTags is string then removed tag index will be a callback argument, otherwise, tag object itself is an argument.  */
   export let deletingCallback: <T extends LinkedNode | number>(_arg1: T) => any = (_) => {};
   export let clickTagCallback: (_arg0: Node) => void = (_) => {};
 
@@ -62,8 +59,8 @@
     .map<TagChoice>(node => ({ ...node, showText: node.text }));
 
   // word candidate choices
-  const createEmptyChoiceForCreate = (text: string, showText: string): TagChoice => ({
-    id: '', type: '', text, showText, createdAt: Date.now(),
+  const createEmptyChoice = (text: string, showText: string): TagChoice => ({
+    id: '', type: tagType ?? '', text, showText, createdAt: Date.now(),
   });
   const internalAutoCompleteFn = async (queryText: string): Promise<TagChoice[]> => {
     if (!allowCreateNode)
@@ -77,7 +74,7 @@
       .map<TagChoice>(choice => {
         return typeof choice == 'object'
           ? {...choice, showText: choice.text}
-          : createEmptyChoiceForCreate(choice, choice);
+          : createEmptyChoice(choice, choice);
       });
 
     if (normalizedQueryText.length > 0 && // query text is not empty string
@@ -122,19 +119,15 @@
     internalSelectedTags = internalSelectedTags;
   };
   const popTag = () => {
-    const last_index = internalSelectedTags.length;
+    const last_index = internalSelectedTags.length - 1;
     const poppedTag = internalSelectedTags.pop();
     if (!poppedTag) return;
-    deletingCallback(typeof poppedTag == 'string'
-      ? last_index - 1
-      : poppedTag as LinkedNode);
+    deletingCallback(typeof poppedTag == 'string' ? last_index : poppedTag as LinkedNode);
     internalSelectedTags = internalSelectedTags;
   };
   const removeTag = (idx: number) => {
     const [removedTag] = internalSelectedTags.splice(idx, 1);
-    deletingCallback(typeof removedTag == 'string'
-      ? idx
-      : removedTag as LinkedNode);
+    deletingCallback(typeof removedTag == 'string' ? idx : removedTag as LinkedNode);
     internalSelectedTags = internalSelectedTags;
   };
 
@@ -155,7 +148,6 @@
   };
 
   const keydownHandler = (ev: KeyboardEvent) => {
-    // console.log(ev.key);
     switch(ev.key) {
     case 'Enter': return addTag(selectedChoiceIndex);
     case 'Backspace': {
@@ -185,7 +177,7 @@
 
 </script>
 
-<div class={`py-2 min-w-0 ${$$props.class}`}>
+<div class={`py-2 ${$$props.class}`}>
   {#if !hideLabel}
     <span>{inputLabel}</span>
   {/if}
@@ -251,7 +243,6 @@
               {selectedChoiceIndex == idx ? 'bg-zinc-600' : ''}
             "
               on:mousedown={(ev) => {
-                // use mousedown instead of click to prevent blur behaviour
                 ev.preventDefault();
                 addTag(idx);
               }}

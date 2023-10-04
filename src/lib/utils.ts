@@ -30,6 +30,10 @@ export const getModifierKey = () => {
   return '^';
 };
 
+export const removeHebrewVowels = (text: string) => {
+  return text.replace(/[\u0591-\u05C7]/g, '');
+};
+
 export const normalizeWord = (word: string) => {
   return word.trim().toLowerCase();
 };
