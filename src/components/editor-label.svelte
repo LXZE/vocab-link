@@ -31,7 +31,7 @@
   };
   const saveEditWordHandler = async () => {
     if ($selectedNodeId && $selectedNode!.text != editWord) {
-      await graphDB.editNodeText($selectedNodeId, editWord);
+      await graphDB.updateNode($selectedNodeId, 'text', editWord);
       selectedNode.set(await graphDB.getNodeFromId($selectedNodeId));
     }
     isEditWord = false;

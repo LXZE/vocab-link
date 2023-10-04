@@ -21,7 +21,7 @@ export const nodePrepareIndexMapFn = (node: Node): IndexedNode => ({ ...node,
 liveQuery(async () => await graphDB.getAllNodesByType(NodeType.Word))
   .subscribe(async (nodes) => {
     allWordIndex = nodes.map(nodePrepareIndexMapFn);
-    allForms = nodes.flatMap(node => node.form ?? []);
+    allForms = nodes.flatMap(node => node.forms ?? []);
   });
 liveQuery(async () => await graphDB.getAllNodesByType(NodeType.Roman))
   .subscribe(async (nodes) => allRomanIndex = nodes.map(nodePrepareIndexMapFn));
@@ -45,5 +45,5 @@ export const queryTextsByText = (queryText: string, texts: string[], givenOption
   const excludeTextsSet = new Set(excludeTexts);
   const filteredText = texts.filter(text => !excludeTextsSet.has(text));
   return fuzzysort.go(normalizeSync(queryText), filteredText, { limit })
-    .map(res => res);
+    .map(res => res.target);
 };

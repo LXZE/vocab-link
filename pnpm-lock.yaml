@@ -35,6 +35,9 @@ dependencies:
   dexie:
     specifier: 4.0.1-alpha.25
     version: 4.0.1-alpha.25
+  dexie-export-import:
+    specifier: ^4.0.7
+    version: 4.0.7(dexie@4.0.1-alpha.25)
   force-graph:
     specifier: ^1.43.4
     version: 1.43.4
@@ -1303,6 +1306,14 @@ packages:
     resolution: {integrity: sha512-reYkTUJAZb9gUuZ2RvVCNhVHdg62RHnJ7WJl8ftMi4diZ6NWlciOzQN88pUhSELEwflJht4oQDv0F0BMlwaYtA==}
     engines: {node: '>=8'}
     dev: true
+
+  /dexie-export-import@4.0.7(dexie@4.0.1-alpha.25):
+    resolution: {integrity: sha512-h22soiockhhWch6edw8XL/JNfn7akPLuLf6kPQdR4uneG/P0XQus4I8wpjV86dck61oEYKPHm36jyft/zVK0jQ==}
+    peerDependencies:
+      dexie: ^2.0.4 || ^3.0.0 || ^4.0.1-alpha.5
+    dependencies:
+      dexie: 4.0.1-alpha.25
+    dev: false
 
   /dexie@4.0.1-alpha.25:
     resolution: {integrity: sha512-udAExYYfJaC6IzVC+ygHdlWYoYxhwYHtiITkthGgSH7dh2FBk3qqDGkJ/Mn2lfxsmATcq9qJDUjyO7yWOo/ZPA==}

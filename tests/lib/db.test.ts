@@ -113,10 +113,14 @@ describe('test Graph DB', () => {
   });
 
   // Update
-  it('Can edit Node\'s text', async () => {
+  it('Can update Node\'s properties', async () => {
     await helper.initDB();
-    await expect(graphDB.editNodeText('n1', 'new text')).resolves.not.toThrowError();
+    // change text
+    await expect(graphDB.updateNode('n1', 'text', 'new text')).resolves.not.toThrowError();
     await expect(graphDB.getNodeFromId('n1')).resolves.toMatchObject({ text: 'new text' });
+    // change forms
+    await expect(graphDB.updateNode('n1', 'forms', ['f1', 'f2'])).resolves.not.toThrowError();
+    await expect(graphDB.getNodeFromId('n1')).resolves.toMatchObject({ forms: ['f1', 'f2'] });
   });
 
   // Delete

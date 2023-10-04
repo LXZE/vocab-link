@@ -65,7 +65,7 @@
       (detailedMaybeNode.connectedEdgeId).forEach(edgeId => highlightEdges.add(edgeId));
 
       const existNodeData = graphDrawer.graphData().nodes.find(node => node.id == maybeNode.id);
-      if (!existNodeData) return;
+      if (!existNodeData || !graphDrawer) return;
       graphDrawer
         .centerAt(existNodeData.x, existNodeData.y, 500)
         .zoomToFit(500, 50, (node: CustomNodeObject) => {
@@ -117,9 +117,7 @@
       const previousNodeData = new Map(previousNode.map((node: CustomNodeObject) => [node.id! as string, node]));
       const previousLinkData = new Map(previousLink.map((link: CustomLinkObject) => [link.id!, link]));
       nodes = newNodes.map((node) => {
-        const newNode = previousNodeData.get(node.id! as string) ?? node;
-        newNode.text = node.text;
-        return newNode;
+        return Object.assign(previousNodeData.get(node.id! as string) ?? {}, node);
       });
       links = newLinks.map((link) => previousLinkData.get(link.id! as string) ?? link);
       updateGraph();

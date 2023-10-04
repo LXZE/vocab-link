@@ -1,5 +1,6 @@
 import { EdgeType, NodeType } from '@/utils/const';
 import Dexie, { type DexieOptions, type Table } from 'dexie';
+import { exportDB, importInto } from 'dexie-export-import';
 import type { GraphData, NodeObject, LinkObject } from 'force-graph';
 import { generateUID } from './utils';
 import { zip } from 'lodash';
@@ -10,7 +11,7 @@ export interface Node {
   id: string
   text: string
   type: string
-  form?: string[]
+  forms?: string[]
   createdAt: number
 }
 
@@ -82,11 +83,18 @@ export class GraphDB {
     this.db = db;
   }
 
+  importData(blob: Blob) {
+    return importInto(this.db, blob);
+  }
+  exportData() {
+    return exportDB(this.db);
+  }
+
   getNodeFromId(nodeId: string) {
     return this.db.nodes.get(nodeId);
   }
-  editNodeText(nodeId: string, text: string) {
-    return this.db.nodes.update(nodeId, { text });
+  updateNode<T extends keyof Omit<Node, 'id'>>(nodeId: string, key: T, value: Node[T]) {
+    return this.db.nodes.update(nodeId, { [key]: value });
   }
 
   marshalEdge(edge: Edge): CustomLinkObject {

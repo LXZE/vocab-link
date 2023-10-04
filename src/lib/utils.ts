@@ -33,3 +33,29 @@ export const getModifierKey = () => {
 export const normalizeWord = (word: string) => {
   return word.trim().toLowerCase();
 };
+
+export const promptDownload = (blob: Blob, fileName = 'vocab.db') => {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.download = fileName;
+  link.href = url;
+  link.click();
+  URL.revokeObjectURL(url); // Object URLs should be revoked after use
+};
+
+export const promptUpload = async (): Promise<Blob> => {
+  return new Promise<Blob>((resolve, reject) => {
+    const input = document.createElement('input');
+    input.type='file';
+    input.accept='.db';
+    input.onchange = (e: Event) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const filesList = (e.currentTarget as HTMLInputElement).files;
+      if (filesList == null) return reject('No file given');
+      return resolve(filesList[0]);
+    };
+    input.click();
+  });
+};
+

@@ -21,7 +21,9 @@
   export let allowTagClick = false;
 
   /** if allowCreateNode is true, the choice function must be provided */
-  export let choiceFunction: ((_queryText: string) => Promise<Node[] | string[]>) | undefined = undefined;
+  export let choiceFunction: (
+    (_queryText: string) => Promise<Node[] | string[]>
+  ) | undefined = undefined;
 
   export let inputLabel = '';
   export let hideLabel = false;
@@ -107,7 +109,7 @@
   const tagClickHandler = (tag: TagChoice) => {
     if (allowTagClick) {
       blurHandler();
-      clickTagCallback(tag)
+      clickTagCallback(tag);
     }
   };
   const addTag = (idx: number) => {
@@ -124,14 +126,14 @@
     const poppedTag = internalSelectedTags.pop();
     if (!poppedTag) return;
     deletingCallback(typeof poppedTag == 'string'
-      ? last_index
+      ? last_index - 1
       : poppedTag as LinkedNode);
     internalSelectedTags = internalSelectedTags;
   };
-  const removeTag = (index: number) => {
-    const [removedTag] = internalSelectedTags.splice(index, 1);
-    deletingCallback(typeof removeTag == 'string'
-      ? index
+  const removeTag = (idx: number) => {
+    const [removedTag] = internalSelectedTags.splice(idx, 1);
+    deletingCallback(typeof removedTag == 'string'
+      ? idx
       : removedTag as LinkedNode);
     internalSelectedTags = internalSelectedTags;
   };
@@ -190,8 +192,15 @@
   {#if !hideMaxTags && maxTags != Infinity}
     <span class="text-sm underline text-zinc-500">Max links = {maxTags}</span>
   {/if}
-  <div class="flex flex-col gap-2 my-2 relative">
-    <div class='tags-input' bind:this={inputLayout}>
+  <div class="flex flex-col gap-2 my-2 relative"
+    role="textbox" tabindex="0"
+    on:mousedown={(ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      inputElem.focus();
+    }}
+  >
+    <div class="tags-input" bind:this={inputLayout}>
       {#if internalSelectedTags.length > 0}
         <div class="tags">
           {#each internalSelectedTags as tag, idx}
@@ -201,13 +210,19 @@
                 typeof tag == 'object' && tagClickHandler(tag);
               }}
             >
-              { Object.getOwnPropertyDescriptor(tag, autoCompleteObjectKey)?.value }
+              {
+                typeof tag == 'string'
+                  ? tag
+                  : Object.getOwnPropertyDescriptor(tag, autoCompleteObjectKey)?.value
+              }
               {#if !disableRemoveTag}
-                <span on:pointerdown={(ev) => {
-                  ev.preventDefault();
-                  ev.stopPropagation();
-                  removeTag(idx);
-                }}>
+                <span class='cursor-pointer'
+                  on:pointerdown={(ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    removeTag(idx);
+                  }}
+                >
                   <Icon icon={IconClose} width="20" />
                 </span>
               {/if}
@@ -215,10 +230,8 @@
           {/each}
         </div>
       {/if}
-      {#if !disableInput}
+      {#if !disableInput && internalSelectedTags.length < maxTags}
         <input bind:this={inputElem}
-          size={15}
-          disabled={internalSelectedTags.length >= maxTags}
           autocomplete="off"
           type="text"
           placeholder={`Add ${inputLabel.toLowerCase()}...`}

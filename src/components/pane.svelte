@@ -11,6 +11,7 @@
 
   import { graphDB } from '@/lib/graph-db';
   import { init_db, clear_db } from '@/utils/db-action';
+  import { promptDownload, promptUpload } from '@/lib/utils';
 
   let MINIMUM_EDITOR_WIDTH = 500; // px
   let screenSize: number;
@@ -18,12 +19,12 @@
   let minLPaneSize = 30; // Percentage
   const calculateRequiredEditorPercentage = (screenSize: number) => {
     return MINIMUM_EDITOR_WIDTH / screenSize * 100;
-  }
+  };
   const resizeHandler = () => {
     minLPaneSize = calculateRequiredEditorPercentage(screenSize);
     if (lPaneSize < minLPaneSize)
       lPaneSize = minLPaneSize;
-  }
+  };
   onMount(() => resizeHandler());
 
   let lPaneSize = get(leftPaneSize);
@@ -46,6 +47,22 @@
     lPaneSize = 50;
     rPaneSize = 50;
   };
+
+  const importDB = async () => {
+    try {
+      const blob = await promptUpload();
+      console.log(blob);
+      await graphDB.importData(blob);
+    } catch (err) {
+      console.error(err);
+      // do nothing
+      // todo: alert on screen
+    }
+  };
+  const exportDB = async () => {
+    const blob = await graphDB.exportData();
+    promptDownload(blob);
+  };
 </script>
 
 <Splitpanes dblClickSplitter={false} theme='custom-theme'
@@ -61,6 +78,12 @@
           </button>
           <button class="btn" on:click={() => clear_db(graphDB.db)}>
             NUKE DB
+          </button>
+          <button class="btn" on:click={importDB}>
+            IMPORT DB
+          </button>
+          <button class="btn" on:click={exportDB}>
+            EXPORT DB
           </button>
         </div>
       {/if}

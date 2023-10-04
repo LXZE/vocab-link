@@ -22,4 +22,5 @@ export const graphEdgeColors = new Map<string, string>([
   [EdgeType.Romanization, '#EAC696'],
   [EdgeType.IsLanguage, '#7EAA92'],
   [EdgeType.IsPOS, '#9F91CC'],
+  [EdgeType.IsForm, '#E9B824'],
 ]);

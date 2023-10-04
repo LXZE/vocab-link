@@ -31,17 +31,19 @@
   });
 
   // get selected tags
-  const filterLinkedNodes = (filterFunction: (node: LinkedNode) => boolean) => $connectedNodes$
+  const filterLinkedNodes = (filterFunction: (_: LinkedNode) => boolean) => $connectedNodes$
     .filter(filterFunction).sort(nodeSortFn);
   const languageFilterFn = (node: LinkedNode) => node.type == NodeType.Language;
   const POSFilterFn = (node: LinkedNode) => node.type == NodeType.POS;
   const meaningFilterFn = (node: LinkedNode) => node.type == NodeType.Word && node.edgeType == EdgeType.Means;
   const antonymFilterFn = (node: LinkedNode) => node.type == NodeType.Word && node.edgeType == EdgeType.Antonym;
+  const formsFilterFn = (node: LinkedNode) => node.type == NodeType.Word && node.edgeType == EdgeType.IsForm;
   const romanFilterFn = (node: LinkedNode) => node.type == NodeType.Roman;
   $: languageSelected = $connectedNodes$ ? filterLinkedNodes(languageFilterFn) : [];
   $: POSSelected = $connectedNodes$ ? filterLinkedNodes(POSFilterFn) : [];
   $: meaningSelected = $connectedNodes$ ? filterLinkedNodes(meaningFilterFn) : [];
   $: antonymSelected = $connectedNodes$ ? filterLinkedNodes(antonymFilterFn) : [];
+  $: formsSelected = $connectedNodes$ ? filterLinkedNodes(formsFilterFn) : [];
   $: romanSelected = $connectedNodes$ ? filterLinkedNodes(romanFilterFn) : [];
 
   // suggestion  function
@@ -49,8 +51,7 @@
     return queryNodeByText(queryText, preparedIndexes, {
       limit: 10,
       excludeNodesId: [...meaningSelected.map(node => node.id), $selectedNodeId ?? '']
-    })
-      .filter(node => node.id != $selectedNodeId);
+    });
   };
   const meaningChoiceFn = async (queryText: string): Promise<Node[]> => {
     // if no query text then return connected nodes' neighbor for suggestion
@@ -66,38 +67,36 @@
     if ($selectedNodeId) {
       if (toLinkNode.id == '') {
         const newNode = await graphDB.createNewNode(nodeType, normalizeWord(toLinkNode.text));
-        await graphDB.createNewEdge(edgeType, $selectedNodeId!, newNode.id);
-        if (direction == 'two-way') await graphDB.createNewEdge(edgeType, newNode.id, $selectedNodeId!);
+        await graphDB.createNewEdge(edgeType, $selectedNodeId, newNode.id);
+        if (direction == 'two-way') await graphDB.createNewEdge(edgeType, newNode.id, $selectedNodeId);
       } else {
-        await graphDB.createNewEdge(edgeType, $selectedNodeId!, toLinkNode.id);
-        if (direction == 'two-way') await graphDB.createNewEdge(edgeType, toLinkNode.id, $selectedNodeId!);
+        await graphDB.createNewEdge(edgeType, $selectedNodeId, toLinkNode.id);
+        if (direction == 'two-way') await graphDB.createNewEdge(edgeType, toLinkNode.id, $selectedNodeId);
       }
       $selectedNode = $selectedNode; // trigger graph
     }
   };
 
-  const delete1WayLinkHandler = async (linkedNode: LinkedNode | number) => {
+  const deleteLinkHandler = (
+    direction: 'one-way' | 'two-way' = 'one-way'
+  ) => async (linkedNode: LinkedNode | number) => {
     if (typeof linkedNode === 'number') return; // if return index of tag, do nothing
-    if ($selectedNode) {
-      await graphDB.deleteEdge(linkedNode.linkedEdgeId);
-      $selectedNode = $selectedNode; // trigger graph
-    }
-  };
-
-  const delete2WayLinkHandler = async (removedNode: Node | number) => {
-    if (typeof removedNode === 'number') return; // if return index of tag, do nothing
     if ($selectedNodeId) {
-      await Promise.all([
-        graphDB.deleteEdgeByNodesId($selectedNodeId!, removedNode.id),
-        graphDB.deleteEdgeByNodesId(removedNode.id, $selectedNodeId!),
-      ]);
+      if (direction == 'one-way')
+        await graphDB.deleteEdge(linkedNode.linkedEdgeId);
+      else {
+        await Promise.all([
+          graphDB.deleteEdgeByNodesId($selectedNodeId, linkedNode.id),
+          graphDB.deleteEdgeByNodesId(linkedNode.id, $selectedNodeId),
+        ]);
+      }
       $selectedNode = $selectedNode; // trigger graph
     }
   };
 
   const tagClickHandler = (clickedNode: Node) => {
     selectedNode.set(clickedNode);
-  }
+  };
 
   let openDialog: () => void;
   const deleteWordHandler = async () => {
@@ -126,14 +125,14 @@
       inputLabel={'Language'} tagType={NodeType.Language}
       allowTagClick clickTagCallback={tagClickHandler}
       addingCallback={linkNodeHandler(EdgeType.IsLanguage, NodeType.Language)}
-      deletingCallback={delete1WayLinkHandler}
+      deletingCallback={deleteLinkHandler()}
     />
 
     <TagsInput selectedTags={POSSelected}
       inputLabel={'Part of speech'} tagType={NodeType.POS}
       allowTagClick clickTagCallback={tagClickHandler}
       addingCallback={linkNodeHandler(EdgeType.IsPOS, NodeType.POS)}
-      deletingCallback={delete1WayLinkHandler}
+      deletingCallback={deleteLinkHandler()}
     />
 
     <TagsInput selectedTags={meaningSelected}
@@ -142,7 +141,7 @@
       allowTagClick clickTagCallback={tagClickHandler}
       choiceFunction={meaningChoiceFn}
       addingCallback={linkNodeHandler(EdgeType.Means, NodeType.Word, 'two-way')}
-      deletingCallback={delete2WayLinkHandler}
+      deletingCallback={deleteLinkHandler('two-way')}
       minimumChars={0}
     />
 
@@ -152,7 +151,7 @@
       allowTagClick clickTagCallback={tagClickHandler}
       choiceFunction={(queryText) => queryNodes(queryText, allWordIndex)}
       addingCallback={linkNodeHandler(EdgeType.Antonym, NodeType.Word, 'two-way')}
-      deletingCallback={delete2WayLinkHandler}
+      deletingCallback={deleteLinkHandler('two-way')}
       minimumChars={0}
     />
 
@@ -163,12 +162,11 @@
         allowTagClick clickTagCallback={tagClickHandler}
         choiceFunction={(queryText) => queryNodes(queryText, allRomanIndex)}
         addingCallback={linkNodeHandler(EdgeType.Romanization, NodeType.Roman)}
-        deletingCallback={delete1WayLinkHandler}
+        deletingCallback={deleteLinkHandler()}
       />
     {/if}
 
-    <WordForm selectedNode={$selectedNode}
-    />
+    <WordForm formsSelected={formsSelected} />
 
     <div class="collapse collapse-arrow mb-2">
       <input type="checkbox" />

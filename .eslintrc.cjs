@@ -1,10 +1,10 @@
 module.exports = {
   root: true,
   env: { browser: true, es2020: true },
+  plugins: ['vitest-globals'],
   extends: [
     'eslint:recommended',
     'plugin:svelte/recommended',
-    'plugin:vitest-globals/recommend',
   ],
   ignorePatterns: ['dist', '.eslintrc.cjs'],
   parser: '@typescript-eslint/parser',
