@@ -10,6 +10,7 @@ export interface Node {
   id: string
   text: string
   type: string
+  form?: string[]
   createdAt: number
 }
 
@@ -33,7 +34,6 @@ export interface NodeWithRelation extends Node {
 export interface Edge {
   id: string
   type: string
-  text?: string
   sourceId: string
   targetId: string
   createdAt: number

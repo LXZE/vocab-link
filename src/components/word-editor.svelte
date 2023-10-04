@@ -76,14 +76,16 @@
     }
   };
 
-  const delete1WayLinkHandler = async (linkedNode: LinkedNode) => {
+  const delete1WayLinkHandler = async (linkedNode: LinkedNode | number) => {
+    if (typeof linkedNode === 'number') return; // if return index of tag, do nothing
     if ($selectedNode) {
       await graphDB.deleteEdge(linkedNode.linkedEdgeId);
       $selectedNode = $selectedNode; // trigger graph
     }
   };
 
-  const delete2WayLinkHandler = async (removedNode: Node) => {
+  const delete2WayLinkHandler = async (removedNode: Node | number) => {
+    if (typeof removedNode === 'number') return; // if return index of tag, do nothing
     if ($selectedNodeId) {
       await Promise.all([
         graphDB.deleteEdgeByNodesId($selectedNodeId!, removedNode.id),
@@ -93,7 +95,7 @@
     }
   };
 
-  const tagClickHandler = async (clickedNode: Node) => {
+  const tagClickHandler = (clickedNode: Node) => {
     selectedNode.set(clickedNode);
   }
 

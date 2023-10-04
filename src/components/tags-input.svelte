@@ -1,5 +1,5 @@
 <script lang='ts' context='module'>
-  export interface TagChoices extends Node {
+  export interface TagChoice extends Node {
     showText: string;
   }
 </script>
@@ -21,24 +21,29 @@
   export let allowTagClick = false;
 
   /** if allowCreateNode is true, the choice function must be provided */
-  export let choiceFunction: ((_queryText: string) => Promise<Node[]>) | undefined = undefined;
+  export let choiceFunction: ((_queryText: string) => Promise<Node[] | string[]>) | undefined = undefined;
 
   export let inputLabel = '';
   export let hideLabel = false;
   export let autoCompleteObjectKey = 'showText';
   export let minimumChars = 1;
-  export let tagType: NodeType;
-  export let selectedTags: LinkedNode[] = [];
+  /** used for query related Nodes */
+  export let tagType: NodeType | undefined = undefined;
+  export let selectedTags: LinkedNode[] | string[] = [];
   export let disableInput = false;
   export let disableRemoveTag = false;
   export let maxTags = Infinity;
   export let hideMaxTags = false;
 
-  export let addingCallback: (_arg0: Node) => void = (_) => {};
-  export let deletingCallback: (_arg1: LinkedNode) => void = (_arg1: LinkedNode) => {};
+  export let addingCallback: (_arg0: Node) => any = (_) => {};
+  export let deletingCallback: <T extends LinkedNode | number>(_arg1: T) => any = (_) => {};
   export let clickTagCallback: (_arg0: Node) => void = (_) => {};
 
-  $: internalSelectedTags = selectedTags.map(tag => ({ ...tag, showText: tag.text }));
+  $: internalSelectedTags = selectedTags.map(tag => {
+    if (typeof tag == 'object')
+      return Object.assign(tag, { showText: tag.text });
+    return tag;
+  });
 
   let tagInput = '';
   let selectedChoiceIndex = 0;
@@ -47,27 +52,36 @@
   // non word candidate choices
   let allTags: Node[] = [];
   onMount(async () => {
-    if (!allowCreateNode) allTags = await graphDB.getAllNodesByType(tagType);
+    if (!allowCreateNode && tagType) allTags = await graphDB.getAllNodesByType(tagType);
   });
-  $: selectedTagsSet = new Set(internalSelectedTags.map(node => node.id));
+  $: selectedTagsSet = new Set(internalSelectedTags.map(tag => typeof tag == 'object' ? tag.id : tag));
   $: remainChoices = allTags
     .filter(node => !selectedTagsSet.has(node.id)) // filter only non selected
-    .map<TagChoices>(node => ({ ...node, showText: node.text }));
+    .map<TagChoice>(node => ({ ...node, showText: node.text }));
 
   // word candidate choices
-  const internalAutoCompleteFn = async (queryText: string): Promise<TagChoices[]> => {
-    if (allowCreateNode && choiceFunction === undefined) {
+  const createEmptyChoiceForCreate = (text: string, showText: string): TagChoice => ({
+    id: '', type: '', text, showText, createdAt: Date.now(),
+  });
+  const internalAutoCompleteFn = async (queryText: string): Promise<TagChoice[]> => {
+    if (!allowCreateNode)
+      throw Error('choiceFunction must be call only if allowCreateNode is set to true');
+    if (choiceFunction === undefined)
       throw Error('choiceFunction not provided when allowCreateNode set to true');
-    }
 
     const normalizedQueryText = normalizeWord(queryText);
 
     const result = (await choiceFunction!(queryText))
-      .map<TagChoices>(choice => ({...choice, showText: choice.text}));
+      .map<TagChoice>(choice => {
+        return typeof choice == 'object'
+          ? {...choice, showText: choice.text}
+          : createEmptyChoiceForCreate(choice, choice);
+      });
 
-    if (allowCreateNode && // allow create new word
-      normalizedQueryText.length > 0 && // query text is not empty string
-      !internalSelectedTags.some(tag => tag.text == queryText) && // no query text in selected choice
+    if (normalizedQueryText.length > 0 && // query text is not empty string
+      !internalSelectedTags.some(tag =>
+        typeof tag == 'string' ? tag == queryText : tag.text == queryText
+      ) && // no query text in selected choice
       !result.some(res => res.text == queryText) // no query text in choices
     ) {
       result.push({
@@ -78,8 +92,7 @@
     return result;
   };
 
-
-  let candidateChoices: TagChoices[] = [];
+  let candidateChoices: TagChoice[] = [];
   const setCandidateChoices = debounce(async () => {
     if (tagInput.length < minimumChars) return;
 
@@ -91,7 +104,7 @@
   }, 100, { trailing: true, maxWait: 200 });
   $: (tagInput, internalSelectedTags), setCandidateChoices();
 
-  const tagClickHandler = (tag: TagChoices) => {
+  const tagClickHandler = (tag: TagChoice) => {
     if (allowTagClick) {
       blurHandler();
       clickTagCallback(tag)
@@ -107,14 +120,19 @@
     internalSelectedTags = internalSelectedTags;
   };
   const popTag = () => {
+    const last_index = internalSelectedTags.length;
     const poppedTag = internalSelectedTags.pop();
     if (!poppedTag) return;
-    deletingCallback(poppedTag);
+    deletingCallback(typeof poppedTag == 'string'
+      ? last_index
+      : poppedTag as LinkedNode);
     internalSelectedTags = internalSelectedTags;
   };
   const removeTag = (index: number) => {
     const [removedTag] = internalSelectedTags.splice(index, 1);
-    deletingCallback(removedTag);
+    deletingCallback(typeof removeTag == 'string'
+      ? index
+      : removedTag as LinkedNode);
     internalSelectedTags = internalSelectedTags;
   };
 
@@ -180,7 +198,7 @@
             <button class={`tag ${allowTagClick ? 'cursor-pointer' : 'cursor-auto'}`}
               on:pointerdown={(ev) => {
                 ev.preventDefault();
-                tagClickHandler(tag);
+                typeof tag == 'object' && tagClickHandler(tag);
               }}
             >
               { Object.getOwnPropertyDescriptor(tag, autoCompleteObjectKey)?.value }

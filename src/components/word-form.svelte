@@ -1,6 +1,5 @@
 <script lang='ts'>
   import TagsInput from '@/components/tags-input.svelte';
-  import SearchableInput from '@/components/searchable-input.svelte';
 
   import Icon from '@iconify/svelte';
   import addIcon from '@iconify/icons-material-symbols/add';
@@ -8,44 +7,47 @@
 
   import { NodeType } from '@/utils/const';
   import type { CustomNodeObject, Node, LinkedNode } from "@/lib/graph-db"
-  import { allWordIndex, queryNodeByText } from '@/lib/search';
+  import { allForms, allWordIndex, queryNodeByText, queryTextsByText } from '@/lib/search';
 
-  // export let setSelectedNodeForm: (_formName: string) => void = (_) => {};
-
-  // first row: selected node
+  // 1st row: self word form
   export let selectedNode: CustomNodeObject;
   $: internalSelectedNode = selectedNode as LinkedNode;
+  $: internalSelectedForm = selectedNode.form ?? [];
   let selectedNodesForm = '';
 
-  // 1..n-1 rows: linked nodes
-  type ConnectedForm = { words: LinkedNode[], form: string }[]
+  // 2..-1 rows: related worm form
+  type ConnectedForm = { words: LinkedNode | null, form: string[] }[]
   let connectedForms: ConnectedForm = [{
-    words: [selectedNode as LinkedNode], form: 'test',
+    words: selectedNode as LinkedNode, form: ['test'],
   }];
-  $: linkedNodesId = [
-    ...connectedForms.flatMap(form => form.words).map(node => node.id),
+  $: linkedWordNodesId = [
+    ...connectedForms.map(form => form.words)
+      .filter((node): node is LinkedNode => node != null)
+      .map(node => node.id),
     selectedNode.id as string
   ]
 
-  // last row: new node
-  let newWordFormNodes: LinkedNode[] = [];
-  let newWordFormName = '';
-
   const wordChoiceFn = async (queryText: string): Promise<Node[]> => {
     return queryNodeByText(queryText, allWordIndex, {
-      limit: 10, excludeNodesId: linkedNodesId,
+      limit: 10,
+      excludeNodesId: linkedWordNodesId,
     })
   }
+  const formChoiceFn = async (queryText: string): Promise<string[]> => {
+    const res = queryTextsByText(queryText, allForms);
+    console.debug(res);
+    return [];
+  }
   const addTag = (newNode: Node) => {
-    newWordFormNodes = [...newWordFormNodes, newNode as LinkedNode];
+    // newWordFormNodes = [...newWordFormNodes, newNode as LinkedNode];
   }
 
   const addFormHandler = () => {
-    if (newWordFormNodes.length == 0 || newWordFormName == '') return;
-    // todo: add add connection handler
-    connectedForms = [...connectedForms, { words: newWordFormNodes as LinkedNode[], form: newWordFormName }]
-    newWordFormNodes = [];
-    newWordFormName = '';
+    // if (newWordFormNodes.length == 0 || newWordFormName == '') return;
+    // // todo: add add connection handler
+    connectedForms = [...connectedForms, { words: null, form: [] }]
+    // newWordFormNodes = [];
+    // newWordFormName = '';
   }
 
   const deleteFormHandler = (index: number) => {
@@ -61,31 +63,35 @@
   <div class="flex flex-col">
 
     <div class="word-form-row">
-      <TagsInput class="word-form-tags" selectedTags={[internalSelectedNode]}
+      <TagsInput selectedTags={[internalSelectedNode]}
         inputLabel='word' hideLabel
-        tagType={NodeType.Roman}
         maxTags={1} hideMaxTags
         disableRemoveTag disableInput
       />
       <span> = </span>
-      <SearchableInput class="word-form-name" bind:textInput={selectedNodesForm} />
+      <TagsInput selectedTags={internalSelectedForm}
+        inputLabel='form' hideLabel
+        allowCreateNode
+        choiceFunction={formChoiceFn}
+        disableRemoveTag disableInput
+      />
+      
     </div>
 
     {#each connectedForms as connectedForm, idx}
       <div class="word-form-row">
         <TagsInput class='word-form-tags'
-          selectedTags={connectedForm.words}
+          selectedTags={
+            connectedForm.words
+              ? [connectedForm.words]
+              : []
+          }
           inputLabel="form" hideLabel
           tagType={NodeType.Word}
-          maxTags={2} hideMaxTags
-          disableRemoveTag disableInput
+          maxTags={1} hideMaxTags
         />
         <span> = </span>
-        <SearchableInput class="word-form-name"
-          inputSize={14}
-          textInput={connectedForm.form}
-          disabled
-        />
+
         <div class="tooltip" data-tip="Delete word form">
           <button class="btn btn-square btn-md" on:click={() => deleteFormHandler(idx)}>
             <Icon icon={deleteIcon} width={20} />
@@ -94,21 +100,11 @@
       </div>
     {/each}
 
-    <div class="word-form-row">
-      <TagsInput class="word-form-tags"
-        selectedTags={newWordFormNodes}
-        inputLabel="form" hideLabel
-        tagType={NodeType.Word}
-        choiceFunction={wordChoiceFn}
-        addingCallback={addTag}
-      />
-      <span> = </span>
-      <SearchableInput class="word-form-name" bind:textInput={newWordFormName} inputSize={14} />
-      <div class="tooltip" data-tip="Add word form">
-        <button class="btn btn-square btn-md" on:click={() => addFormHandler()}>
-          <Icon icon={addIcon} width={20} />
-        </button>
-      </div>
+    <div class="tooltip" data-tip="Add word form">
+      <button class="btn btn-square btn-md" on:click={() => addFormHandler()}>
+        <Icon icon={addIcon} width={20} />
+        Add more form
+      </button>
     </div>
   </div>
 </div>
@@ -119,10 +115,6 @@
 
   :global(.word-form-tags) {
     @apply py-0;
-  }
-
-  :global(.word-form-name) {
-    @apply min-w-fit;
   }
 }
 </style>
