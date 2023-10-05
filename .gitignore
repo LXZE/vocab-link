@@ -25,3 +25,6 @@ dist-ssr
 *.sw?
 
 .pnpm-store/
+/test-results/
+/playwright-report/
+/playwright/.cache/
