@@ -15,7 +15,7 @@ const graphTestWord: Node[] = [
   { id: 'n7', type: NodeType.Word, text: 'pomme', createdAt: 0, },
   { id: 'n8', type: NodeType.Word, text: '사과', createdAt: 0, },
   { id: 'n9', type: NodeType.Word, text: 'תפוח', createdAt: 0, },
-  { id: 'n10', type: NodeType.Word, text: 'étre', createdAt: 0, },
+  { id: 'n10', type: NodeType.Word, text: 'être', createdAt: 0, },
 ];
 
 const graphTestRoman: Node[] = [

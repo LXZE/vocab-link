@@ -10,7 +10,7 @@
   import { leftPaneSize, rightPaneSize } from '@/lib/store';
 
   import { graphDB } from '@/lib/graph-db';
-  import { init_db, clear_db } from '@/utils/db-action';
+  import { addDummyData, clear_db } from '@/utils/db-action';
   import { promptDownload, promptUpload } from '@/lib/utils';
 
   let MINIMUM_EDITOR_WIDTH = 500; // px
@@ -73,7 +73,7 @@
       <span class='w-full p-2 text-center text-2xl'>Word Editor</span>
       {#if import.meta.env.DEV}
         <div class="flex justify-center">
-          <button class="btn" on:click={() => init_db(graphDB.db)}>
+          <button class="btn" on:click={() => addDummyData(graphDB.db)}>
             INIT DB
           </button>
           <button class="btn" on:click={() => clear_db(graphDB.db)}>

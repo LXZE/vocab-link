@@ -1,9 +1,12 @@
-import { EdgeType, NodeType } from '@/utils/const';
 import Dexie, { type DexieOptions, type Table } from 'dexie';
 import { exportDB, importInto } from 'dexie-export-import';
 import type { GraphData, NodeObject, LinkObject } from 'force-graph';
-import { generateUID } from './utils';
+
+import { createNodesMap, generateUID } from '@/lib/utils';
+import { init_db } from '@/utils/db-action';
+import { EdgeType, NodeType, ALL_LANGUAGES, ALL_POS } from '@/utils/const';
 import { zip } from 'lodash';
+import { ALL_LANGUAGES_MAP, ALL_POS_MAP } from './store';
 
 const DB_NAME = 'vocab_link_graph';
 
@@ -52,8 +55,8 @@ export class DB extends Dexie {
 
   constructor(options?: DexieOptions) {
     super(DB_NAME, options);
-    this.version(2).stores({
-      nodes: '&id,&text',
+    this.version(3).stores({
+      nodes: '&id,&text,type',
       edges: '&id,sourceId,targetId',
       nodeInfo: '&id',
     });
@@ -81,6 +84,25 @@ export class GraphDB {
 
   constructor(db: DB) {
     this.db = db;
+  }
+
+  async init() {
+    console.log('init db...');
+    const langCollection = this.db.nodes.where('type').equals(NodeType.Language);
+    const posCollection = this.db.nodes.where('type').equals(NodeType.POS);
+    const langCount = await langCollection.count();
+    const posCount = await posCollection.count();
+    if (langCount != ALL_LANGUAGES.length || posCount != ALL_POS.length) {
+      console.log('language count or POS count mismatch, reset the database...');
+      await langCollection.delete();
+      await posCollection.delete();
+      await init_db(this.db);
+    } else {
+      const langNodes = await langCollection.toArray();
+      const posNodes = await posCollection.toArray();
+      ALL_LANGUAGES_MAP.set(createNodesMap(langNodes));
+      ALL_POS_MAP.set(createNodesMap(posNodes));
+    }
   }
 
   importData(blob: Blob) {
@@ -291,4 +313,5 @@ export class WordDB {
 
 const db = new DB();
 export const graphDB = new GraphDB(db);
+await graphDB.init();
 export const wordDB = new WordDB(db);
