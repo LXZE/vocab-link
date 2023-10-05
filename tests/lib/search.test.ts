@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 
-import { queryNodeByText, nodePrepareIndexMapFn } from '@/lib/search';
+import { queryNodeByText, nodePrepareIndexMapFn, queryTextsByText } from '@/lib/search';
 import { type Node } from '@/lib/graph-db';
 import { NodeType } from '@/utils/const';
 
@@ -19,17 +19,38 @@ const graphTestWord: Node[] = [
 ];
 
 const graphTestRoman: Node[] = [
-  { id: 'nr1', type: NodeType.Roman, text: 'pińggǔo', createdAt: 0, },
+  { id: 'nr1', type: NodeType.Roman, text: 'pínggǔo', createdAt: 0, },
   { id: 'nr2', type: NodeType.Roman, text: 'ringo', createdAt: 0, },
   { id: 'nr3', type: NodeType.Roman, text: 'sagwa', createdAt: 0, },
   { id: 'nr4', type: NodeType.Roman, text: 'tapuach', createdAt: 0, },
 ];
 
+const stringTestForms = ['infinitive', 'present', 'past', '1st person', '2nd person'];
+
 describe('Test search library', () => {
-  it('Can search text in several language', async () => {
+  it('Can search text in list of string', () => {
+    expect(queryTextsByText('i', stringTestForms))
+      .toEqual(stringTestForms.filter(form => form.includes('i')));
+  });
+
+  it('Can search text in list of string without given the exist result after provide exclude words list', () => {
+    expect(queryTextsByText('i', stringTestForms, { excludeTexts: ['infinitive'] }))
+      .toEqual([]);
+    expect(queryTextsByText('p', stringTestForms, { excludeTexts: ['present'] }))
+      .toEqual(expect.arrayContaining(
+        stringTestForms.filter(form => form != 'present' && form.includes('p'))
+      ));
+  });
+
+  it('Can search text in list of string with limit', () => {
+    expect(queryTextsByText('p', stringTestForms, { limit: 1 }))
+      .toEqual(['past']); // shortest
+  });
+
+  it('Can search word text in several language', async () => {
     const indexedWord = graphTestWord.map(nodePrepareIndexMapFn);
 
-    ['a', 'é', 'อ', '사', '蘋', 'り', 'ת'].forEach(character => {
+    ['a', 'ê', 'อ', '사', '蘋', 'り', 'ת'].forEach(character => {
       expect(queryNodeByText(character, indexedWord))
         .toEqual(expect.arrayContaining(
           graphTestWord.filter(node => node.text.includes(character))

@@ -146,7 +146,6 @@ export class GraphDB {
       .toArray();
   }
 
-
   async getNeighborsNodesByNodeId(nodeId: string, by: 'source' | 'target' = 'source'): Promise<LinkedNode[]> {
     const [referenceKey, resultKey]: [keyof Edge, keyof Edge] = by == 'source'
       ? ['sourceId', 'targetId'] : ['targetId', 'sourceId'];
@@ -192,23 +191,6 @@ export class GraphDB {
       }
     });
     return extendedNode;
-  }
-
-  async addDetailToNodes(nodes: Node[]): Promise<NodeWithRelation[]> {
-    const edges = await this.getAllEdges();
-    const nodesMap = Object.fromEntries<NodeWithRelation>(
-      nodes.map(node => [node.id, {...node,
-        neighborsNodeId: [], connectedEdgeId: [],
-      }])
-    );
-    edges.forEach(edge => {
-      nodesMap[edge.sourceId].neighborsNodeId.push(edge.targetId);
-      nodesMap[edge.sourceId].connectedEdgeId.push(edge.id);
-
-      nodesMap[edge.targetId].neighborsNodeId.push(edge.sourceId);
-      nodesMap[edge.targetId].connectedEdgeId.push(edge.id);
-    });
-    return Object.values(nodesMap);
   }
 
   async getNeighborWords(nodeId: string): Promise<Node[]> {

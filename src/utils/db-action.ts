@@ -14,26 +14,22 @@ export const init_db = async (db: DB) => {
     id: generateUID(), text: language, type: NodeType.Language, createdAt: Date.now(),
   }));
   const languageIdMap = createNodesMap(languages);
+  ALL_LANGUAGES_MAP.set(languageIdMap);
   await db.nodes.bulkAdd(languages);
 
   const POSs = ALL_POS.map((pos) => ({
     id: generateUID(), text: pos, type: NodeType.POS, createdAt: Date.now(),
   }));
-  const POSIdMap = new Map(POSs.map((pos) => (
-    [pos.text, pos.id]
-  )));
-  await db.nodes.bulkAdd(POSs);
-  ALL_LANGUAGES_MAP.set(languageIdMap);
+  const POSIdMap = createNodesMap(POSs);
   ALL_POS_MAP.set(POSIdMap);
+  await db.nodes.bulkAdd(POSs);
 };
 
 export const addDummyData = async (db: DB) => {
   const words = Object.keys(seedData).map((word) => ({
-    id: generateUID(), text: word, type: NodeType.Word, createdAt: Date.now(),
+    id: generateUID(), text: word, type: NodeType.Word, forms: seedData[word].forms, createdAt: Date.now(),
   }));
-  const wordIdMap = new Map(words.map((word) => (
-    [word.text, word.id]
-  )));
+  const wordIdMap = createNodesMap(words);
   await db.nodes.bulkAdd(words);
 
   const edges = Object.entries(seedData).flatMap(([word, { lang, pos, means }]) => {

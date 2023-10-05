@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 
 import { DB, graphDB as importGraph, WordDB } from '@/lib/graph-db';
 import type { GraphDB, Node, Edge } from '@/lib/graph-db';
-import { EdgeType, NodeType } from '@/utils/const';
+import { ALL_LANGUAGES, ALL_POS, EdgeType, NodeType } from '@/utils/const';
 
 import { GraphDBTestHelper } from '@test/helpers/graph-helper';
 
@@ -11,12 +11,12 @@ const graphTestNodes: Node[] = [
   { id: 'n2', type: NodeType.Word, text: 'text 2', createdAt: 0, },
   { id: 'n3', type: NodeType.Word, text: 'text 3', createdAt: 0, },
   { id: 'n4', type: NodeType.Word, text: 'text 4', createdAt: 0, },
-  { id: 'n5', type: NodeType.Language, text: 'language 1', createdAt: 0, },
+  { id: 'n5', type: NodeType.Roman, text: 'roman 1', createdAt: 0, },
 ];
 const graphTestEdges: Edge[] = [
   { id: 'e1', sourceId: 'n1', targetId: 'n2', type: EdgeType.Means, createdAt: 0, },
   { id: 'e2', sourceId: 'n2', targetId: 'n3', type: EdgeType.Means, createdAt: 0, },
-  { id: 'e3', sourceId: 'n1', targetId: 'n5', type: EdgeType.IsLanguage, createdAt: 0, },
+  { id: 'e3', sourceId: 'n1', targetId: 'n5', type: EdgeType.Romanization, createdAt: 0, },
 ];
 
 describe('test Graph DB', () => {
@@ -32,6 +32,15 @@ describe('test Graph DB', () => {
 
   beforeEach(async () => {
     await helper.clearDB();
+  });
+
+  // On load
+  it('Should already have languages and POS info in database on load', async () => {
+    await graphDB.init();
+    expect(graphDB.getAllNodesByType(NodeType.Language))
+      .resolves.toHaveLength(ALL_LANGUAGES.length);
+    expect(graphDB.getAllNodesByType(NodeType.POS))
+      .resolves.toHaveLength(ALL_POS.length);
   });
 
   // Create
@@ -121,6 +130,9 @@ describe('test Graph DB', () => {
     // change forms
     await expect(graphDB.updateNode('n1', 'forms', ['f1', 'f2'])).resolves.not.toThrowError();
     await expect(graphDB.getNodeFromId('n1')).resolves.toMatchObject({ forms: ['f1', 'f2'] });
+    // change it again
+    await expect(graphDB.updateNode('n1', 'forms', ['f0', 'f3'])).resolves.not.toThrowError();
+    await expect(graphDB.getNodeFromId('n1')).resolves.toMatchObject({ forms: ['f0', 'f3'] });
   });
 
   // Delete

@@ -3,6 +3,7 @@ type SeedData = {
   lang: string
   pos: string
   means: string[]
+  forms?: string[]
 }
 export const seedData: { [key: string]: SeedData } = {
   'ผม':   { lang: 'Thai', pos: POS.Pronoun, means: ['i', '我', '僕', 'ich', 'je', '저', 'אני'] },
@@ -39,9 +40,13 @@ export const seedData: { [key: string]: SeedData } = {
   'אתם': {lang: 'Hebrew', pos: POS.Pronoun, means: []},
   'אתן': {lang: 'Hebrew', pos: POS.Pronoun, means: []},
 
+  'is': { lang: 'English', pos: POS.Verb, means: [], forms: ['present', '3rd person'] },
+  'am': { lang: 'English', pos: POS.Verb, means: [], forms: ['present', '1st person'] },
+  'are': { lang: 'English', pos: POS.Verb, means: [], forms: ['present', '2nd person'] },
+
   'เป็น':   { lang: 'Thai', pos: POS.Verb, means: ['be', '是', 'sein', 'être', '이다'] },
   'คือ':   { lang: 'Thai', pos: POS.Verb, means: ['be', '是', 'sein', 'être', '이다'] },
-  'be':   { lang: 'English', pos: POS.Verb, means: ['是', 'sein', 'être', '이다'] },
+  'be':   { lang: 'English', pos: POS.Verb, means: ['是', 'sein', 'être', '이다'], forms: ['infinitive'] },
   '是':   { lang: 'Chinese', pos: POS.Verb, means: ['sein', 'être', '이다'] },
   'sein': { lang: 'German', pos: POS.Verb, means: ['être', '이다'] },
   'être': { lang: 'French', pos: POS.Verb, means: ['이다'] },
@@ -80,4 +85,7 @@ export const seedData: { [key: string]: SeedData } = {
   'fast': { lang: 'English', pos: POS.Adverb, means: ['quickly', '快'] },
   'quickly': { lang: 'English', pos: POS.Adverb, means: ['快'] },
   '快': { lang: 'Chinese', pos: POS.Adverb, means: [] },
+
+  'ช้า': { lang: 'Thai', pos: POS.Adverb, means: ['slow'] },
+  'slow': { lang: 'English', pos: POS.Adverb, means: [] },
 };
