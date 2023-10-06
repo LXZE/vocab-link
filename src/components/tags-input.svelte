@@ -235,7 +235,8 @@
       {/if}
     </div>
     {#if isFocused && tagInput.length >= minimumChars && candidateChoices.length > 0}
-      <ul class='menu w-full max-w-md rounded-box bg-zinc-800 absolute z-10 border border-zinc-600'
+      <ul id="tag-choices-list"
+        class='menu w-full max-w-md rounded-box bg-zinc-800 absolute z-10 border border-zinc-600'
         style={`top: calc(${inputLayout.clientHeight}px + 0.5rem)`}
       >
           {#each candidateChoices as choice, idx}

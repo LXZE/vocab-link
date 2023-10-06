@@ -1,42 +1,44 @@
 import { test, expect } from '@playwright/test';
-import VocabLinkPage from './helpers/index-page';
+import VocabLinkApp from './helpers/index-page';
 
 // test('<template>', async ({ page }) => {
 //   const app = new VocabLinkPage(page);
 //   await app.goto();
 // });
 
-test('can type meta+k to focus', async ({ page }) => {
-  const app = new VocabLinkPage(page);
+/** TODO:
+ * test add meaning
+ * test add antonym
+ * test add form
+ *  */
+
+test('can add language to word editor', async ({ page }) => {
+  const app = new VocabLinkApp(page);
   await app.goto();
-  
-  const input = await app.selectSearchInput();
-  await page.keyboard.press('Control+k');
-  await expect(input).toBeFocused();
+  await app.addWord('test word');
+  await app.selectWord('test word');
+
+  // add language 1
+  await page.getByPlaceholder('Add language...').fill('English');
+  await app.waitUntilTagChoicesVisible();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('button', { name: 'English' })).toBeVisible();
+
+  // add language 2
+  await page.getByPlaceholder('Add language...').fill('Chinese');
+  await app.waitUntilTagChoicesVisible();
+  await page.getByText('Chinese', { exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Chinese' })).toBeVisible();
 });
 
-test('can interact with search input correctly', async ({ page, }) => {
-  const app = new VocabLinkPage(page);
+test('can add POS to word editor', async ({ page }) => {
+  const app = new VocabLinkApp(page);
   await app.goto();
-  
-  // try search for a new word
-  const input = await app.selectSearchInput();
-  await input.click();
-  await input.fill('test');
-  const search_word_choices = await page.locator('ul#search-word-choices');
-  await expect(search_word_choices).toBeVisible();
-  await expect(page.getByText('Add "test" as a new word')).toBeVisible();
+  await app.addWord('test word');
+  await app.selectWord('test word');
 
-  // expect clear button to clear text
-  const clear_button = page.locator('#search-word-container').getByRole('button');
-  await expect(clear_button).toBeVisible();
-  await clear_button.click();
-  await expect(input).toBeEmpty();
-
-  // try create a word by CLICK or type ENTER
-  await input.click();
-  await input.fill('test');
-  await expect(search_word_choices).toBeVisible();
-  await page.getByText('Add "test" as a new word').click();
-  await expect(page.getByText('Word: test')).toBeVisible();
+  await page.getByPlaceholder('Add part of speech...').fill('Noun');
+  await app.waitUntilTagChoicesVisible();
+  await page.getByText('Noun', { exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Noun' })).toBeVisible();
 });

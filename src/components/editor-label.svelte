@@ -57,20 +57,20 @@
 
       {#if !isEditWord}
         <div class="tooltip" data-tip="Edit word">
-          <button class="btn btn-square" on:click={openEditWordHandler}>
+          <button id="edit-word-text-btn" class="btn btn-square" on:click={openEditWordHandler}>
             <Icon icon={editIcon} width={20} />
           </button>
         </div>
       {:else}
         <div class="tooltip" data-tip="Save word">
-          <button class="btn btn-square" on:click={saveEditWordHandler}>
+          <button id="save-word-text-btn" class="btn btn-square" on:click={saveEditWordHandler}>
             <Icon icon={saveIcon} width={20} />
           </button>
         </div>
       {/if}
 
       <div class="tooltip" data-tip="Close">
-        <button class="btn btn-square" on:click={closeHandler}>
+        <button id="deselect-word-btn" class="btn btn-square" on:click={closeHandler}>
           <Icon icon={closeIcon} width={20} />
         </button>
       </div>

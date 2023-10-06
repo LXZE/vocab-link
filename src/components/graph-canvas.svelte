@@ -131,34 +131,34 @@
   });
 </script>
 
-<div class="border border-slate-800 h-full w-full"
+<div id="canvas-envelope" class="border border-slate-800 h-full w-full"
   use:watchResize={resizeHandler}
 >
   <div class="relative z-10">
     <ul class="absolute top-4 right-4 menu menu-horizontal bg-base-200 rounded-box">
-      <li><a href={null} class="tooltip" data-tip="Zoom in"
+      <li><a href={null} id="canvas-zoom-in" class="tooltip" data-tip="Zoom in"
         on:click={() => zoomIn()}
         >
         <Icon icon={IconZoomIn} width="20" />
       </a></li>
-      <li><a href={null} class="tooltip" data-tip="Zoom out"
+      <li><a href={null} id="canvas-zoom-out" class="tooltip" data-tip="Zoom out"
         on:click={() => zoomOut()}
         >
         <Icon icon={IconZoomOut} width="20" />
       </a></li>
-      <li><a href={null} class="tooltip" data-tip="Re-center"
+      <li><a href={null} id="canvas-center" class="tooltip" data-tip="Re-center"
         on:click={() => recenter()}
         >
         <Icon icon={IconCenterFocus} width="20" />
       </a></li>
       {#if !isExpandGraph}
-        <li><a href={null} class="tooltip" data-tip="Expand"
+        <li><a href={null} id="canvas-expand" class="tooltip" data-tip="Expand"
           on:click={() => { isExpandGraph = true; }}
           >
           <Icon icon={IconExpandContent} width="20" />
         </a></li>
       {:else}
-        <li><a href={null} class="tooltip" data-tip="Mimimize"
+        <li><a href={null} id="canvas-minimize" class="tooltip" data-tip="Mimimize"
           on:click={() => { isExpandGraph = false; }}
           >
           <Icon icon={IconShrinkContent} width="20" />
