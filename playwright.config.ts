@@ -21,6 +21,8 @@ export default defineConfig({
   ],
   webServer: {
     command: 'pnpm run dev',
-    port: 8000,
+    port: 8000, // dev
+    // command: 'pnpm run build && pnpm run preview',
+    // port: 4173, // prod
   },
 });

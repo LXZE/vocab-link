@@ -111,7 +111,7 @@
       </div>
   </div>
   {#if isSearchFocused && searchResultNodes.length > 0}
-    <ul class="
+    <ul id="search-word-choices" class="
         menu bg-base-200 w-full max-w-md absolute top-14 z-10
         {(searchText.length > 0) ? 'visible' : 'invisible'}
       "

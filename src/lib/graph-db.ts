@@ -295,5 +295,5 @@ export class WordDB {
 
 const db = new DB();
 export const graphDB = new GraphDB(db);
-await graphDB.init();
+graphDB.init();
 export const wordDB = new WordDB(db);

@@ -10,4 +10,8 @@ export default class VocabLinkPage {
   async goto() {
     await this.page.goto('/');
   }
+
+  async selectSearchInput() {
+    return this.page.locator('input#search-word-input');
+  }
 }
