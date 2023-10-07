@@ -1,5 +1,6 @@
 import { GraphDB } from '@/lib/graph-db';
 import type { Node, Edge } from '@/lib/graph-db';
+import { NodeType } from '@/utils/const';
 
 export class GraphDBTestHelper {
   graphDB!: GraphDB;
@@ -29,7 +30,9 @@ export class GraphDBTestHelper {
 
   clearDB() {
     return Promise.all([
-      this.graphDB.db.nodes.clear(),
+      this.graphDB.db.nodes
+        .where('type').anyOf([NodeType.Word, NodeType.Roman, NodeType.Form])
+        .delete(),
       this.graphDB.db.edges.clear(),
     ]);
   }

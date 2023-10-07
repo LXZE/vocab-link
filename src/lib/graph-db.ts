@@ -81,9 +81,11 @@ export interface CustomGraphData extends GraphData {
 
 export class GraphDB {
   db!: DB;
+  isReady: boolean;
 
   constructor(db: DB) {
     this.db = db;
+    this.isReady = false;
   }
 
   async init() {
@@ -103,6 +105,7 @@ export class GraphDB {
       ALL_LANGUAGES_MAP.set(createNodesMap(langNodes));
       ALL_POS_MAP.set(createNodesMap(posNodes));
     }
+    this.isReady = true;
   }
 
   importData(blob: Blob) {

@@ -5,6 +5,7 @@ import type { GraphDB, Node, Edge } from '@/lib/graph-db';
 import { ALL_LANGUAGES, ALL_POS, EdgeType, NodeType } from '@/utils/const';
 
 import { GraphDBTestHelper } from '@test/helpers/graph-helper';
+import { waitFor } from '@test/helpers/utils';
 
 const graphTestNodes: Node[] = [
   { id: 'n1', type: NodeType.Word, text: 'text 1', createdAt: 0, },
@@ -23,8 +24,9 @@ describe('test Graph DB', () => {
   let graphDB: GraphDB;
   let helper: GraphDBTestHelper;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     graphDB = importGraph;
+    await waitFor(() => importGraph.isReady);
     helper = new GraphDBTestHelper(graphDB);
     helper.setNodes(graphTestNodes);
     helper.setEdges(graphTestEdges);
@@ -36,7 +38,6 @@ describe('test Graph DB', () => {
 
   // On load
   it('Should already have languages and POS info in database on load', async () => {
-    await graphDB.init();
     expect(graphDB.getAllNodesByType(NodeType.Language))
       .resolves.toHaveLength(ALL_LANGUAGES.length);
     expect(graphDB.getAllNodesByType(NodeType.POS))
@@ -72,8 +73,8 @@ describe('test Graph DB', () => {
     await expect(graphDB.getAllNodesByType(NodeType.Word)).resolves.toEqual(
       graphTestNodes.filter(node => node.type == NodeType.Word)
     );
-    await expect(graphDB.getAllNodesByType(NodeType.Language)).resolves.toEqual(
-      graphTestNodes.filter(node => node.type == NodeType.Language)
+    await expect(graphDB.getAllNodesByType(NodeType.Roman)).resolves.toEqual(
+      graphTestNodes.filter(node => node.type == NodeType.Roman)
     );
   });
   it('Can get Node\'s neighbor Nodes via nodeId', async () => {

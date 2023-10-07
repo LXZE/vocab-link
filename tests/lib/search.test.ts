@@ -16,6 +16,9 @@ const graphTestWord: Node[] = [
   { id: 'n8', type: NodeType.Word, text: '사과', createdAt: 0, },
   { id: 'n9', type: NodeType.Word, text: 'תפוח', createdAt: 0, },
   { id: 'n10', type: NodeType.Word, text: 'être', createdAt: 0, },
+  { id: 'n11', type: NodeType.Word, text: 'cote', createdAt: 0, },
+  { id: 'n12', type: NodeType.Word, text: 'côte', createdAt: 0, },
+  { id: 'n13', type: NodeType.Word, text: 'côté', createdAt: 0, },
 ];
 
 const graphTestRoman: Node[] = [
@@ -72,10 +75,32 @@ describe('Test search library', () => {
     ['p', 'í'].forEach(character => {
       expect(queryNodeByText(character, indexedRoman))
         .toEqual(expect.arrayContaining(
-          graphTestRoman.filter(node => node.text.includes(character))
+          graphTestRoman
+            .filter(node => node.text.includes(character))
             .map(node => expect.objectContaining(node))
         ));
     });
   });
 
+  it('Can search same word alphabets with different diacritics', async () => {
+    const indexedWord = graphTestWord.map(nodePrepareIndexMapFn);
+    expect(queryNodeByText('cote', indexedWord).sort((a, b) => a.id.localeCompare(b.id)))
+      .toEqual(expect.arrayContaining(
+        graphTestWord
+          .filter(word => ['cote', 'côte', 'côté'].includes(word.text))
+          .sort((a, b) => a.id.localeCompare(b.id))
+          .map(word => expect.objectContaining(word))
+      ));
+  });
+
+  it('Can search word with diacritics and get all lookalike result', async () => {
+    const indexedWord = graphTestWord.map(nodePrepareIndexMapFn);
+    expect(queryNodeByText('côté', indexedWord).sort((a, b) => a.id.localeCompare(b.id)))
+      .toEqual(expect.arrayContaining(
+        graphTestWord
+          .filter(word => ['cote', 'côte', 'côté'].includes(word.text))
+          .sort((a, b) => a.id.localeCompare(b.id))
+          .map(word => expect.objectContaining(word))
+      ));
+  });
 });
