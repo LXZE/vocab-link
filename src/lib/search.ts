@@ -21,7 +21,7 @@ export const nodePrepareIndexMapFn = (node: Node): IndexedNode => ({ ...node,
 liveQuery(async () => await graphDB.getAllNodesByType(NodeType.Word))
   .subscribe(async (nodes) => {
     allWordIndex = nodes.map(nodePrepareIndexMapFn);
-    allForms = nodes.flatMap(node => node.forms ?? []);
+    allForms = [...new Set(nodes.flatMap(node => node.forms ?? []))];
   });
 liveQuery(async () => await graphDB.getAllNodesByType(NodeType.Roman))
   .subscribe(async (nodes) => allRomanIndex = nodes.map(nodePrepareIndexMapFn));

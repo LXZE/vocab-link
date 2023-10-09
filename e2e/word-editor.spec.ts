@@ -9,7 +9,8 @@ import VocabLinkApp from './helpers/index-page';
 /** TODO:
  * test add meaning
  * test add antonym
- * test add form
+ * test add word form
+ * test add form in each word (should not contain duplicate entry)
  *  */
 
 test('can add language to word editor', async ({ page }) => {

@@ -1,17 +1,22 @@
 <script lang='ts'>
   import { onMount } from 'svelte';
   import { get } from 'svelte/store';
+  import { fade } from 'svelte/transition';
   import { Pane, Splitpanes } from 'svelte-splitpanes';
+
+  import Icon from '@iconify/svelte';
+  import settingsIcon from '@iconify/icons-material-symbols/settings';
+  import closeIcon from '@iconify/icons-material-symbols/close';
 
   import GraphCanvas from './graph-canvas.svelte';
   import SearchInput from './search-input.svelte';
   import WordEditor from './word-editor.svelte';
+  import SettingPage from './setting-page.svelte';
 
   import { leftPaneSize, rightPaneSize } from '@/lib/store';
 
   import { graphDB } from '@/lib/graph-db';
   import { init_db, addDummyData, clear_db } from '@/utils/db-action';
-  import { promptDownload, promptUpload } from '@/lib/utils';
 
   let MINIMUM_EDITOR_WIDTH = 500; // px
   let screenSize: number;
@@ -48,28 +53,28 @@
     rPaneSize = 50;
   };
 
-  const importDB = async () => {
-    try {
-      const blob = await promptUpload();
-      console.log(blob);
-      await graphDB.importData(blob);
-    } catch (err) {
-      console.error(err);
-      // do nothing
-      // todo: alert on screen
-    }
-  };
-  const exportDB = async () => {
-    const blob = await graphDB.exportData();
-    promptDownload(blob);
-  };
+
+  let isSettingOpen = false;
+  let hideComponents = false;
+
 </script>
 
 <Splitpanes dblClickSplitter={false} theme='custom-theme'
   on:splitter-click={resetPaneSize}
 >
 	<Pane bind:minSize={minLPaneSize} bind:size={lPaneSize}>
-    <div id="editor-pane" class="flex flex-col p-4 gap-4 h-[100vh] overflow-y-auto">
+    <div id="editor-pane" class="relative flex flex-col p-4 gap-4 h-[100vh] overflow-y-auto">
+
+      <div class='absolute top-2 right-2 tooltip tooltip-left' data-tip={(isSettingOpen ? 'close': 'open') + ' setting'}>
+        <button class="btn btn-square btn-ghost" on:click={() => isSettingOpen = !isSettingOpen}>
+          {#if isSettingOpen}
+            <Icon icon={closeIcon} />
+          {:else}
+            <Icon icon={settingsIcon} />
+          {/if}
+        </button>
+      </div>
+
       <span class='w-full p-2 text-center text-2xl'>Word Editor</span>
       {#if import.meta.env.DEV}
         <div class="flex justify-center">
@@ -79,18 +84,30 @@
           <button class="btn" on:click={() => clear_db(graphDB.db)}>
             NUKE DB
           </button>
-          <button class="btn" on:click={importDB}>
-            IMPORT DB
-          </button>
-          <button class="btn" on:click={exportDB}>
-            EXPORT DB
-          </button>
         </div>
       {/if}
+
       <div class="flex flex-col p-2 gap-2 items-stretch">
-        <SearchInput />
-        <WordEditor />
+        {#if !isSettingOpen}
+          <div class:hidden={hideComponents}
+            transition:fade={{ duration: 50 }}
+            on:outrostart={() => hideComponents = true}
+            on:outroend={() => hideComponents = false}
+          >
+            <SearchInput />
+            <WordEditor />
+          </div>
+        {:else}
+          <div class:hidden={hideComponents}
+            transition:fade={{ duration: 50 }}
+            on:outrostart={() => hideComponents = true}
+            on:outroend={() => hideComponents = false}
+          >
+            <SettingPage />
+          </div>
+        {/if}
       </div>
+
     </div>
   </Pane>
 	<Pane snapSize={25} bind:size={rPaneSize}>
