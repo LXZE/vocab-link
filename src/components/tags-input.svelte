@@ -85,7 +85,7 @@
     ) {
       result.push({
         id: '', type: '', text: normalizedQueryText, createdAt: Date.now(),
-        showText: `Add '${normalizedQueryText}' and connect`
+        showText: `Add "${normalizedQueryText}" and connect`
       });
     }
     return result;

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import VocabLinkApp from './helpers/index-page';
+import VocabLinkApp from './helpers/vocab-link-app';
 
 // test('<template>', async ({ page }) => {
 //   const app = new VocabLinkPage(page);

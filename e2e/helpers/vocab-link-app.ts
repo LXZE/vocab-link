@@ -25,7 +25,7 @@ export default class VocabLinkApp {
     await this.page.getByText(`Add "${text}" as a new word`).click();
     await expect(this.page.getByText(`Word: ${text}`)).toBeVisible();
 
-    await this.page.locator('button#deselect-word-btn').click();
+    await this.deselectWord();
   }
 
   async selectWord(text: string) {
@@ -40,6 +40,10 @@ export default class VocabLinkApp {
     await expect(target).toBeVisible();
     await target.click();
     await search_word_choices.waitFor({ state: 'hidden' });
+  }
+
+  async deselectWord() {
+    await this.page.locator('button#deselect-word-btn').click();
   }
 
   async waitUntilTagChoicesVisible() {
