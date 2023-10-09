@@ -108,8 +108,20 @@ export class GraphDB {
     this.isReady = true;
   }
 
-  importData(blob: Blob) {
-    return importInto(this.db, blob);
+  async deleteAllTables() {
+    for await(let table of this.db.tables) {
+      await table.clear();
+    }
+  }
+
+  async importData(blob: Blob) {
+    const bkupBlob = await this.exportData();
+    try {
+      await this.deleteAllTables();
+      await importInto(this.db, blob);
+    } catch (err) {
+      await importInto(this.db, bkupBlob);
+    }
   }
   exportData() {
     return exportDB(this.db);
