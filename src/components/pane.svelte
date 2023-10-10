@@ -63,9 +63,11 @@
   on:splitter-click={resetPaneSize}
 >
 	<Pane bind:minSize={minLPaneSize} bind:size={lPaneSize}>
-    <div id="editor-pane" class="relative flex flex-col p-4 gap-4 h-[100vh] overflow-y-auto">
+    <div id="editor-pane" class="relative flex flex-col p-4 pb-2 gap-4 h-[100vh] overflow-y-auto">
 
-      <div class='absolute top-2 right-2 tooltip tooltip-left' data-tip={(isSettingOpen ? 'close': 'open') + ' setting'}>
+      <div id='setting-btn' class='absolute top-2 right-2 tooltip tooltip-left'
+        data-tip={(isSettingOpen ? 'close': 'open') + ' setting'}
+      >
         <button class="btn btn-square btn-ghost" on:click={() => isSettingOpen = !isSettingOpen}>
           {#if isSettingOpen}
             <Icon icon={closeIcon} />
@@ -75,7 +77,9 @@
         </button>
       </div>
 
-      <span class='w-full p-2 text-center text-2xl'>Word Editor</span>
+      <span id='title' class='w-full p-2 text-center text-2xl'>
+        Vocab Link <span class="text-sm">(beta)</span>
+      </span>
       {#if import.meta.env.DEV}
         <div class="flex justify-center">
           <button class="btn" on:click={() => init_db(graphDB.db).then(() => addDummyData(graphDB.db)) }>
@@ -107,6 +111,21 @@
           </div>
         {/if}
       </div>
+
+      <footer id='editor-footer'
+        class='footer w-full
+        mt-auto pt-2 py-2
+        items-center text-neutral-content
+        border-t border-zinc-600
+        '
+      >
+        <aside class="items-center grid-flow-col">
+          <p>© 2023 / Made with ♥ by <a class='underline' href="https://twitter.com/lxze">@LXZE</a></p>
+        </aside>
+        <nav class="grid-flow-col gap-4 md:place-self-center md:justify-self-end">
+          <span>Found a bug? report <a class='underline' href="https://github.com/LXZE/vocab-link/issues">here</a></span>
+        </nav>
+      </footer>
 
     </div>
   </Pane>

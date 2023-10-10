@@ -49,4 +49,12 @@ export default class VocabLinkApp {
   async waitUntilTagChoicesVisible() {
     await this.page.locator('#tag-choices-list').waitFor({ state: 'visible' });
   }
+
+  async clickAddWordForm() {
+    await this.page.getByRole('button', { name: 'Add more form' }).click();
+  }
+
+  async clickDeleteWordAndConfirm() {
+    await this.page.getByRole('button', { name: 'Delete' });
+  }
 }
