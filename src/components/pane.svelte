@@ -120,10 +120,10 @@
         '
       >
         <aside class="items-center grid-flow-col">
-          <p>© 2023 / Made with ♥ by <a class='underline' href="https://twitter.com/lxze">@LXZE</a></p>
+          <p>© 2023 / Made with ♥ by <a class='underline' target="_blank" href="https://twitter.com/lxze">@LXZE</a></p>
         </aside>
         <nav class="grid-flow-col gap-4 md:place-self-center md:justify-self-end">
-          <span>Found a bug? report <a class='underline' href="https://github.com/LXZE/vocab-link/issues">here</a></span>
+          <span>Found a bug? report <a class='underline' target="_blank" href="https://github.com/LXZE/vocab-link/issues">here</a></span>
         </nav>
       </footer>
 
