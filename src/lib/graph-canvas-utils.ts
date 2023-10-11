@@ -21,7 +21,7 @@ export const graphSetup = (graphInstance: ForceGraphInstance) => {
     })
     .linkLabel((link: CustomLinkObject) => `link:${link.type}`)
     .linkDirectionalArrowRelPos(0.5)
-    .linkDirectionalArrowLength((link: CustomLinkObject) => twoWaysEdge.has(link.type! as EdgeType) ? 0 : 10)
+    .linkDirectionalArrowLength((link: CustomLinkObject) => twoWaysEdge.has(link.type! as EdgeType) ? 0 : 5)
     .nodeId('id')
     .nodeRelSize(NODE_RADIUS)
     .nodeLabel((node: CustomNodeObject) => `node:${node.type}`)
