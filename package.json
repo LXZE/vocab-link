@@ -30,6 +30,7 @@
     "vitest-dom": "^0.1.1"
   },
   "dependencies": {
+    "@amplitude/analytics-browser": "^2.3.2",
     "@iconify/icons-material-symbols": "^1.2.55",
     "@iconify/svelte": "^3.1.4",
     "@sveltejs/vite-plugin-svelte": "^2.4.2",
