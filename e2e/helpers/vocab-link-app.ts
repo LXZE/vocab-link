@@ -1,3 +1,4 @@
+import { sanitize } from '@/lib/utils';
 import { expect, type Page } from '@playwright/test';
 
 export default class VocabLinkApp {
@@ -23,7 +24,7 @@ export default class VocabLinkApp {
     const search_word_choices = await this.page.locator('ul#search-word-choices');
     await expect(search_word_choices).toBeVisible();
     await this.page.getByText(`Add "${text}" as a new word`).click();
-    await expect(this.page.getByText(`Word: ${text}`)).toBeVisible();
+    await expect(this.page.getByText(`Word: ${sanitize(text)}`)).toBeVisible();
 
     await this.deselectWord();
   }

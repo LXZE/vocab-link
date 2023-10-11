@@ -1,6 +1,20 @@
 import { test, expect } from '@playwright/test';
 import VocabLinkApp from './helpers/vocab-link-app';
 
+test.describe('test security', () => {
+  test('can add dangerous input', async ({ page }) => {
+    const dangerousStr = '<img src="aaa" onError="alert(\'danger\')">';
+    const cleanedStr = 'img srcaaa onerroralert\'danger\'';
+
+    const app = new VocabLinkApp(page);
+    await app.goto();
+    await app.addWord(dangerousStr);
+    await app.selectWord(cleanedStr);
+
+    await expect(page.getByText(`Word: ${cleanedStr}`)).toBeVisible();
+  });
+});
+
 test.describe('test language and POS zone', () => {
   test('can add language to word editor', async ({ page }) => {
     const app = new VocabLinkApp(page);

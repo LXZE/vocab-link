@@ -2,7 +2,7 @@ import Dexie, { type DexieOptions, type Table } from 'dexie';
 import { exportDB, importInto } from 'dexie-export-import';
 import type { GraphData, NodeObject, LinkObject } from 'force-graph';
 
-import { createNodesMap, generateUID } from '@/lib/utils';
+import { createNodesMap, generateUID, sanitize } from '@/lib/utils';
 import { init_db } from '@/utils/db-action';
 import { EdgeType, NodeType, ALL_LANGUAGES, ALL_POS } from '@/utils/const';
 import { zip } from 'lodash';
@@ -246,7 +246,7 @@ export class GraphDB {
   async createNewNode(type: NodeType, text: string): Promise<Node> {
     const newNode: Node = {
       id: generateUID(), createdAt: Date.now(),
-      type, text,
+      type, text: sanitize(text),
     };
     await this.db.nodes.add(newNode);
     return newNode;

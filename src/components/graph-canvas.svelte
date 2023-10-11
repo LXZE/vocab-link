@@ -17,6 +17,7 @@
   import type { CustomNodeObject, CustomLinkObject, Node } from '@/lib/graph-db';
   import { selectedNode } from '@/lib/store';
   import { graphSetup } from '@/lib/graph-canvas-utils';
+  import { sanitize } from '@/lib/utils';
 
   export let toggleGraphViewerFn: (_arg: boolean) => void;
 
@@ -117,7 +118,10 @@
       const previousNodeData = new Map(previousNode.map((node: CustomNodeObject) => [node.id! as string, node]));
       const previousLinkData = new Map(previousLink.map((link: CustomLinkObject) => [link.id!, link]));
       nodes = newNodes.map((node) => {
-        return Object.assign(previousNodeData.get(node.id! as string) ?? {}, node);
+        return Object.assign(
+          previousNodeData.get(node.id! as string) ?? {},
+          {...node, text: sanitize(node.text ?? '')}
+        );
       });
       links = newLinks.map((link) => previousLinkData.get(link.id! as string) ?? link);
       updateGraph();

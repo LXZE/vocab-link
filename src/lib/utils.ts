@@ -68,3 +68,6 @@ export const promptUpload = async (): Promise<Blob> => {
   });
 };
 
+export const sanitize = (text: string) => {
+  return text.replace(/[<({})>="]/g, '');
+};
