@@ -1,17 +1,6 @@
 import { test, expect } from '@playwright/test';
 import VocabLinkApp from './helpers/vocab-link-app';
 
-// test('<template>', async ({ page }) => {
-//   const app = new VocabLinkPage(page);
-//   await app.goto();
-// });
-
-/** TODO:
- * test delete word form
- * test word note
- * test delete word
- *  */
-
 test.describe('test language and POS zone', () => {
   test('can add language to word editor', async ({ page }) => {
     const app = new VocabLinkApp(page);
@@ -232,7 +221,7 @@ test.describe('test word form', () => {
     await page.locator('button:has-text("form1") > span').click();
     await expect(linkedFormName).not.toBeVisible();
   });
-  test('can add related word form', async ({ page }) => {
+  test('can add & delete related word form', async ({ page }) => {
     const app = new VocabLinkApp(page);
     await app.goto();
     await app.addWord('test');
@@ -269,5 +258,66 @@ test.describe('test word form', () => {
     await expect(page.getByText('Word: test2')).toBeVisible();
     await expect(page.getByRole('button', { name: 'form0' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'form1' })).toBeVisible();
+
+    // delete related word form
+    await page.getByRole('button', { name: 'test', exact: true }).click();
+    await expect(page.getByText('Word: test')).toBeVisible();
+    await page.locator('button:has-text("test2") > span').click();
+    await expect(page.getByRole('button', { name: 'test2' })).not.toBeVisible();
+  });
+});
+
+test.describe('test word note', () => {
+  test('can add note to word', async ({ page }) => {
+    const app = new VocabLinkApp(page);
+    await app.goto();
+    await app.addWord('test');
+    await app.selectWord('test');
+
+    // add note and deselect
+    const wordNoteTextArea = page.locator('textarea');
+    const noteContent = 'test add note';
+    await page.getByRole('checkbox').click();
+    await expect(wordNoteTextArea).toBeVisible();
+    await wordNoteTextArea.fill(noteContent);
+    await expect(wordNoteTextArea).toHaveValue(noteContent);
+    await app.deselectWord();
+
+    // select word again should see note
+    await app.selectWord('test');
+    await page.getByRole('checkbox').click();
+    await expect(wordNoteTextArea).toHaveValue(noteContent);
+  });
+});
+
+test.describe('test delete word', () => {
+  test('can delete word', async ({ page }) => {
+    const app = new VocabLinkApp(page);
+    await app.goto();
+    await app.addWord('test');
+    await app.selectWord('test');
+
+    // delete word
+    const deleteButton = page.getByRole('button', { name: 'Delete' });
+    await deleteButton.click();
+    expect(page.getByRole('heading', { name: 'Warning!' })).toBeVisible();
+    await page.getByRole('button', { name: 'Confirm' }).click();
+
+    await expect(page.getByText('Word: test')).not.toBeVisible();
+  });
+  test('can cancel delete word', async ({ page }) => {
+    const app = new VocabLinkApp(page);
+    await app.goto();
+    await app.addWord('test');
+    await app.selectWord('test');
+
+    // click delete and cancel
+    const deleteButton = page.getByRole('button', { name: 'Delete' });
+    await deleteButton.click();
+    expect(page.getByRole('heading', { name: 'Warning!' })).toBeVisible();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+
+    // page should remain the same
+    await expect(page.getByText('Word: test')).toBeVisible();
   });
 });

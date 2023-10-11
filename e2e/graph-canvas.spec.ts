@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import VocabLinkApp from './helpers/vocab-link-app';
 
 // test('<template>', async ({ page }) => {
-//   const app = new VocabLinkPage(page);
+//   const app = new VocabLinkApp(page);
 //   await app.goto();
 // });
 

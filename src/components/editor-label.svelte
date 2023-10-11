@@ -1,6 +1,7 @@
 <script lang='ts'>
   import Icon from '@iconify/svelte';
   import closeIcon from '@iconify/icons-material-symbols/close';
+  import cancelIcon from '@iconify/icons-material-symbols/cancel';
   import editIcon from '@iconify/icons-material-symbols/edit';
   import saveIcon from '@iconify/icons-material-symbols/save';
 
@@ -13,6 +14,7 @@
   let editorStatusText: string;
   let editWord: string = '';
   $: {
+    isEditWord = false;
     switch(currentEditorState) {
     case EditorState.NoWordSelected:
       editorStatusText = 'Try to search, create a word or select in graph'; break;
@@ -47,7 +49,7 @@
 <div class="flex gap-2 items-baseline justify-between max-w-md p-2 grow">
 
   {#if isEditWord}
-    <input type="text" class="input input-bordered max-w-xs" bind:value={editWord} />
+    <input id="node-text-editor" type="text" class="input input-bordered max-w-xs" bind:value={editWord} />
   {:else}
     <span class='text-lg'>{editorStatusText}</span>
   {/if}
@@ -61,19 +63,24 @@
             <Icon icon={editIcon} width={20} />
           </button>
         </div>
+        <div class="tooltip" data-tip="Close">
+          <button id="deselect-word-btn" class="btn btn-square" on:click={closeHandler}>
+            <Icon icon={closeIcon} width={20} />
+          </button>
+        </div>
       {:else}
         <div class="tooltip" data-tip="Save word">
           <button id="save-word-text-btn" class="btn btn-square" on:click={saveEditWordHandler}>
             <Icon icon={saveIcon} width={20} />
           </button>
         </div>
+        <div class="tooltip" data-tip="Cancel">
+          <button id="cancel-edit-word-btn" class="btn btn-square" on:click={() => isEditWord = false}>
+            <Icon icon={cancelIcon} width={20} />
+          </button>
+        </div>
       {/if}
 
-      <div class="tooltip" data-tip="Close">
-        <button id="deselect-word-btn" class="btn btn-square" on:click={closeHandler}>
-          <Icon icon={closeIcon} width={20} />
-        </button>
-      </div>
     {/if}
   </div>
 </div>
