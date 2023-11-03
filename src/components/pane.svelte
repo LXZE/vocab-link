@@ -16,7 +16,7 @@
   import { leftPaneSize, rightPaneSize } from '@/lib/store';
 
   import { graphDB } from '@/lib/graph-db';
-  import { init_db, addDummyData, clear_db } from '@/utils/db-action';
+  import { init_all_default_nodes, addDummyData, clear_db } from '@/utils/db-action';
 
   let MINIMUM_EDITOR_WIDTH = 500; // px
   let screenSize: number;
@@ -82,7 +82,7 @@
       </span>
       {#if import.meta.env.DEV}
         <div class="flex justify-center">
-          <button class="btn" on:click={() => init_db(graphDB.db).then(() => addDummyData(graphDB.db)) }>
+          <button class="btn" on:click={() => init_all_default_nodes(graphDB.db).then(() => addDummyData(graphDB.db)) }>
             INIT DB
           </button>
           <button class="btn" on:click={() => clear_db(graphDB.db)}>

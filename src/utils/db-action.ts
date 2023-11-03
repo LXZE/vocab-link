@@ -1,28 +1,31 @@
 import { get } from 'svelte/store';
 import { generateUID, createNodesMap } from '@/lib/utils';
 import { ALL_LANGUAGES_MAP, ALL_POS_MAP } from '@/lib/store';
-import type { DB } from '@/lib/graph-db';
-import { NodeType, EdgeType, ALL_POS, ALL_LANGUAGES } from '@/utils/const';
+import { type DB } from '@/lib/graph-db';
+import { NodeType, EdgeType, ALL_POS_DEFAULT, ALL_LANGUAGES_DEFAULT } from '@/utils/const';
 import { seedData } from './seed_data';
 
 export const clear_db = async(db: DB) => {
   await Promise.all([db.nodes.clear(), db.edges.clear(), db.nodeInfo.clear()]);
 };
 
-export const init_db = async (db: DB) => {
-  const languages = ALL_LANGUAGES.map((language) => ({
+export const init_language = async (db: DB) => {
+  const languages = ALL_LANGUAGES_DEFAULT.map((language) => ({
     id: generateUID(), text: language, type: NodeType.Language, createdAt: Date.now(),
   }));
-  const languageIdMap = createNodesMap(languages);
-  ALL_LANGUAGES_MAP.set(languageIdMap);
   await db.nodes.bulkAdd(languages);
+};
 
-  const POSs = ALL_POS.map((pos) => ({
+export const init_pos = async (db: DB) => {
+  const POSs = ALL_POS_DEFAULT.map((pos) => ({
     id: generateUID(), text: pos, type: NodeType.POS, createdAt: Date.now(),
   }));
-  const POSIdMap = createNodesMap(POSs);
-  ALL_POS_MAP.set(POSIdMap);
   await db.nodes.bulkAdd(POSs);
+};
+
+export const init_all_default_nodes = async (db: DB) => {
+  await init_language(db);
+  await init_pos(db);
 };
 
 export const addDummyData = async (db: DB) => {
