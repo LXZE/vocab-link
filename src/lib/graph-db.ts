@@ -1,12 +1,11 @@
-import Dexie, { type DexieOptions, type Table } from 'dexie';
+import Dexie, { liveQuery, type DexieOptions, type Table } from 'dexie';
 import { exportDB, importInto } from 'dexie-export-import';
 import type { GraphData, NodeObject, LinkObject } from 'force-graph';
 
 import { createNodesMap, generateUID, sanitize } from '@/lib/utils';
-import { init_db } from '@/utils/db-action';
-import { EdgeType, NodeType, ALL_LANGUAGES, ALL_POS } from '@/utils/const';
+import { init_language, init_pos } from '@/utils/db-action';
+import { EdgeType, NodeType } from '@/utils/const';
 import { zip } from 'lodash';
-import { ALL_LANGUAGES_MAP, ALL_POS_MAP } from './store';
 
 const DB_NAME = 'vocab_link_graph';
 
@@ -90,22 +89,23 @@ export class GraphDB {
 
   async init() {
     console.log('init db...');
-    const langCollection = this.db.nodes.where('type').equals(NodeType.Language);
-    const posCollection = this.db.nodes.where('type').equals(NodeType.POS);
-    const langCount = await langCollection.count();
-    const posCount = await posCollection.count();
-    if (langCount != ALL_LANGUAGES.length || posCount != ALL_POS.length) {
-      console.log('language count or POS count mismatch, reset the database...');
-      await langCollection.delete();
-      await posCollection.delete();
-      await init_db(this.db);
-    } else {
-      const langNodes = await langCollection.toArray();
-      const posNodes = await posCollection.toArray();
-      ALL_LANGUAGES_MAP.set(createNodesMap(langNodes));
-      ALL_POS_MAP.set(createNodesMap(posNodes));
+    const allLanguage = await this.getAllNodesByType(NodeType.Language);
+    if (allLanguage.length == 0) {
+      await init_language(this.db);
     }
+
+    const allPos = await this.getAllNodesByType(NodeType.POS);
+    if (allPos.length == 0) {
+      await init_pos(this.db);
+    }
+
     this.isReady = true;
+  }
+
+  getObservableMapNodesByType(type: NodeType) {
+    return liveQuery<Map<string, string>>(async () =>
+      createNodesMap(await graphDB.getAllNodesByType(type))
+    );
   }
 
   async deleteAllTables() {
@@ -157,7 +157,8 @@ export class GraphDB {
 
   getAllNodesByType(nodeType: NodeType): Promise<Node[]> {
     return this.db.nodes
-      .filter(node => node.type == nodeType)
+      // .filter(node => node.type == nodeType)
+      .where({ type: nodeType })
       .toArray();
   }
 

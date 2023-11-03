@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 
 import { DB, graphDB as importGraph, WordDB } from '@/lib/graph-db';
 import type { GraphDB, Node, Edge } from '@/lib/graph-db';
-import { ALL_LANGUAGES, ALL_POS, EdgeType, NodeType } from '@/utils/const';
+import { ALL_LANGUAGES_DEFAULT, ALL_POS_DEFAULT, EdgeType, NodeType } from '@/utils/const';
 
 import { GraphDBTestHelper } from '@test/helpers/graph-helper';
 import { waitFor } from '@test/helpers/utils';
@@ -39,9 +39,9 @@ describe('test Graph DB', () => {
   // On load
   it('Should already have languages and POS info in database on load', async () => {
     expect(graphDB.getAllNodesByType(NodeType.Language))
-      .resolves.toHaveLength(ALL_LANGUAGES.length);
+      .resolves.toHaveLength(ALL_LANGUAGES_DEFAULT.length);
     expect(graphDB.getAllNodesByType(NodeType.POS))
-      .resolves.toHaveLength(ALL_POS.length);
+      .resolves.toHaveLength(ALL_POS_DEFAULT.length);
   });
 
   // Create

@@ -4,8 +4,6 @@ A vocabulary note-taking app with graph visualization.
 
 ## Todo
 
-- [ ] Setting to edit list of language / Part of speech
-- [ ] Add counter and numeral
 - [ ] Add OG preview
 - [ ] Suggestive clickable input (no need to click on input first)
 - [ ] Customizable config
@@ -21,6 +19,8 @@ A vocabulary note-taking app with graph visualization.
     <li>- [x] Vocabulary Editing</li>
     <li>- [x] Fuzzy Search with several script supported</li>
     <li>- [x] Unit test & E2E test</li>
+    <li>- [x] Setting to edit list of language / Part of speech</li>
+    <li>- [x] Add counter and numeral</li>
   </ul>
 </details>
 

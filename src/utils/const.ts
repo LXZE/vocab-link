@@ -8,9 +8,11 @@ export enum POS {
   Preposition = 'Preposition',
   Conjuction = 'Conjuction',
   Determiner = 'Determiner',
+  Counter = 'Counter',
+  Numeral = 'Numeral'
 }
 
-export const ALL_POS = Object.values(POS);
+export const ALL_POS_DEFAULT = Object.values(POS) as string[];
 
 export enum NodeType {
   Word = 'word',
@@ -44,7 +46,7 @@ export enum EditorState {
   NonWordSelected,
 }
 
-export const ALL_LANGUAGES = [
+export const ALL_LANGUAGES_DEFAULT = [
   'Afrikaans',
   'Albanian',
   'Amharic',

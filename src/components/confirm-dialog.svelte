@@ -14,7 +14,10 @@
 <dialog id="confirm-delete-dialog" class="modal" bind:this={confirmDeleteDialog}>
   <div class="modal-box">
     <h3 class="font-bold text-lg">Warning!</h3>
-    <p class="py-4 text-md">The selected node and all connections will be deleted, confirm?</p>
+    <p class="py-4 text-md">
+      The selected node and all connections will be deleted and <span class="underline">cannot be undone</span>,
+      <span class='text-lg underline text-red-500'>confirm?</span>
+    </p>
     <div class="modal-action">
       <button class="btn" on:click={closeConfirmDialogHandler}>Cancel</button>
       <button class="btn btn-error" on:click={deleteWordHandler}>Confirm</button>
