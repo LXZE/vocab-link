@@ -169,9 +169,9 @@
     <WordForm formsSelected={formsSelected} />
 
     <div class="collapse collapse-arrow mb-2">
-      <input type="checkbox" />
+      <input type="checkbox" checked />
       <div class="collapse-title">
-        Click to open note
+        Word Note (Click to toggle open & close)
       </div>
       <div class="collapse-content">
         <WordNote />

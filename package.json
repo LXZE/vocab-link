@@ -18,6 +18,7 @@
     "@playwright/test": "^1.38.1",
     "@testing-library/svelte": "^4.0.3",
     "@typescript-eslint/parser": "^6.7.0",
+    "@vitejs/plugin-basic-ssl": "^1.2.0",
     "@vitest/ui": "^0.34.5",
     "eslint": "^8.49.0",
     "eslint-plugin-svelte": "^2.33.1",
@@ -30,7 +31,6 @@
     "vitest-dom": "^0.1.1"
   },
   "dependencies": {
-    "@amplitude/analytics-browser": "^2.3.2",
     "@iconify/icons-material-symbols": "^1.2.55",
     "@iconify/svelte": "^3.1.4",
     "@sveltejs/vite-plugin-svelte": "^2.4.2",
