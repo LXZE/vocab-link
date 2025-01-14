@@ -19,7 +19,11 @@
   import { graphSetup } from '@/lib/graph-canvas-utils';
   import { sanitize } from '@/lib/utils';
 
-  export let toggleGraphViewerFn: (_arg: boolean) => void;
+  interface Props {
+    toggleGraphViewerFn: (_arg: boolean) => void;
+  }
+
+  let { toggleGraphViewerFn }: Props = $props();
 
   let canvas: HTMLElement;
   const resizeHandler = debounce((ev: HTMLElement) => {
@@ -35,8 +39,11 @@
 
   let graphDrawer: ForceGraphInstance;
   let zoomLevel = 0;
-  let isExpandGraph = false;
-  $: isExpandGraph, toggleGraphViewerFn(isExpandGraph);
+  let isExpandGraph = $state(false);
+  const expandGraphHandler = (target_state: boolean) => {
+    isExpandGraph = target_state;
+    toggleGraphViewerFn(target_state);
+  };
 
   const zoomIn = (k = 0.25) => {
     zoomLevel += k;
@@ -141,34 +148,34 @@
   <div class="relative z-10">
     <ul class="absolute top-4 right-4 menu menu-horizontal bg-base-200 rounded-box">
       <li><a href={null} id="canvas-zoom-in" class="tooltip" data-tip="Zoom in"
-        on:click={() => zoomIn()}
+        onclick={() => zoomIn()}
         >
         <Icon icon={IconZoomIn} width="20" />
       </a></li>
       <li><a href={null} id="canvas-zoom-out" class="tooltip" data-tip="Zoom out"
-        on:click={() => zoomOut()}
+        onclick={() => zoomOut()}
         >
         <Icon icon={IconZoomOut} width="20" />
       </a></li>
       <li><a href={null} id="canvas-center" class="tooltip" data-tip="Re-center"
-        on:click={() => recenter()}
+        onclick={() => recenter()}
         >
         <Icon icon={IconCenterFocus} width="20" />
       </a></li>
       {#if !isExpandGraph}
         <li><a href={null} id="canvas-expand" class="tooltip" data-tip="Expand"
-          on:click={() => { isExpandGraph = true; }}
+          onclick={() => expandGraphHandler(true)}
           >
           <Icon icon={IconExpandContent} width="20" />
         </a></li>
       {:else}
         <li><a href={null} id="canvas-minimize" class="tooltip" data-tip="Mimimize"
-          on:click={() => { isExpandGraph = false; }}
+          onclick={() => expandGraphHandler(false)}
           >
           <Icon icon={IconShrinkContent} width="20" />
         </a></li>
       {/if}
     </ul>
   </div>
-  <div id='canvas' bind:this={canvas} />
+  <div id='canvas' bind:this={canvas}></div>
 </div>

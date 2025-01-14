@@ -1,4 +1,6 @@
 <script lang='ts'>
+  import { run } from 'svelte/legacy';
+
   import TagsInput from '@/components/tags-input.svelte';
 
   import Icon from '@iconify/svelte';
@@ -11,9 +13,13 @@
   import type { Node, LinkedNode } from '@/lib/graph-db';
   import { allForms, allWordIndex, queryNodeByText, queryTextsByText } from '@/lib/search';
 
-  export let formsSelected: LinkedNode[];
+  interface Props {
+    formsSelected: LinkedNode[];
+  }
 
-  let connectedForms: { word: LinkedNode | null, forms: string[] }[] = [];
+  let { formsSelected }: Props = $props();
+
+  let connectedForms: { word: LinkedNode | null, forms: string[] }[] = $state([]);
   const triggerReactivity = async () => {
     connectedForms = connectedForms;
     if ($selectedNodeId)
@@ -29,10 +35,12 @@
     formsSelected.forEach(node => connectedForms.push({ word: node, forms: node.forms ?? [] }));
     connectedForms = connectedForms;
   };
-  $: ($selectedNode, formsSelected), setConnectedForms();
-  $: linkedWordNodesId = connectedForms.map(form => form.word)
+  run(() => {
+    ($selectedNode, formsSelected), setConnectedForms();
+  });
+  let linkedWordNodesId = $derived(connectedForms.map(form => form.word)
     .filter((node): node is LinkedNode => node != null)
-    .map(node => node.id);
+    .map(node => node.id));
 
   const wordChoiceFn = async (queryText: string): Promise<Node[]> => {
     return queryNodeByText(queryText, allWordIndex, {
@@ -146,7 +154,7 @@
   </div>
 
   <div class="tooltip self-start pt-2" data-tip="Add word form">
-    <button class="btn btn-md" on:click={addRowFormHandler}>
+    <button class="btn btn-md" onclick={addRowFormHandler}>
       <Icon icon={addIcon} width={20} />
       Add more form
     </button>

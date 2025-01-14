@@ -9,7 +9,12 @@ export default defineConfig({
     port: 8000,
   },
   plugins: [
-    svelte({ hot: !process.env.VITEST }),
+    svelte({
+      compilerOptions: {
+        customElement: true,
+        hmr: !process.env.VITEST,
+      }
+    }),
     basicSSL({
       domains: ['*.localhost:8000', '*.local.d:8000']
     }),

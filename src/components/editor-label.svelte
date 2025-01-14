@@ -9,11 +9,15 @@
   import { EditorState } from '@/utils/const';
   import { graphDB } from '@/lib/graph-db';
 
-  export let currentEditorState: EditorState;
+  interface Props {
+    currentEditorState: EditorState;
+  }
 
-  let editorStatusText: string;
-  let editWord: string = '';
-  $: {
+  let { currentEditorState }: Props = $props();
+
+  let editorStatusText: string = $state('');
+  let editWord: string = $state('');
+  $effect(() => {
     isEditWord = false;
     switch(currentEditorState) {
     case EditorState.NoWordSelected:
@@ -24,9 +28,9 @@
       editorStatusText = `${$selectedNode!.type?.toUpperCase()}: ${ $selectedNode!.text }`; break;
     default: break;
     }
-  }
+  });
 
-  let isEditWord = false;
+  let isEditWord = $state(false);
   const openEditWordHandler = () => {
     editWord = $selectedNode?.text ?? '';
     isEditWord = true;
@@ -59,23 +63,23 @@
 
       {#if !isEditWord}
         <div class="tooltip" data-tip="Edit word">
-          <button id="edit-word-text-btn" class="btn btn-square" on:click={openEditWordHandler}>
+          <button id="edit-word-text-btn" class="btn btn-square" onclick={openEditWordHandler}>
             <Icon icon={editIcon} width={20} />
           </button>
         </div>
         <div class="tooltip" data-tip="Close">
-          <button id="deselect-word-btn" class="btn btn-square" on:click={closeHandler}>
+          <button id="deselect-word-btn" class="btn btn-square" onclick={closeHandler}>
             <Icon icon={closeIcon} width={20} />
           </button>
         </div>
       {:else}
         <div class="tooltip" data-tip="Save word">
-          <button id="save-word-text-btn" class="btn btn-square" on:click={saveEditWordHandler}>
+          <button id="save-word-text-btn" class="btn btn-square" onclick={saveEditWordHandler}>
             <Icon icon={saveIcon} width={20} />
           </button>
         </div>
         <div class="tooltip" data-tip="Cancel">
-          <button id="cancel-edit-word-btn" class="btn btn-square" on:click={() => isEditWord = false}>
+          <button id="cancel-edit-word-btn" class="btn btn-square" onclick={() => isEditWord = false}>
             <Icon icon={cancelIcon} width={20} />
           </button>
         </div>

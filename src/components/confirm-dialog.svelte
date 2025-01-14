@@ -1,7 +1,9 @@
 <script lang='ts'>
-  export let onConfirmCallback: CallableFunction = async () => {};
+  interface Props {
+    onConfirmCallback?: CallableFunction;
+  }
+  let { onConfirmCallback = async () => {} }: Props = $props();
   export const open = () => confirmDeleteDialog.showModal();
-
   let confirmDeleteDialog: HTMLDialogElement;
 
   const closeConfirmDialogHandler = () => confirmDeleteDialog.close();
@@ -19,8 +21,8 @@
       <span class='text-lg underline text-red-500'>confirm?</span>
     </p>
     <div class="modal-action">
-      <button class="btn" on:click={closeConfirmDialogHandler}>Cancel</button>
-      <button class="btn btn-error" on:click={deleteWordHandler}>Confirm</button>
+      <button class="btn" onclick={closeConfirmDialogHandler}>Cancel</button>
+      <button class="btn btn-error" onclick={deleteWordHandler}>Confirm</button>
     </div>
   </div>
   <form method="dialog" class="modal-backdrop">

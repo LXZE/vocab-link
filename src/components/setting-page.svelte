@@ -2,18 +2,13 @@
   import MainSettingElem from '@/components/setting-main-element.svelte';
   import EditPropertyElem from '@/components/edit-property-element.svelte';
 
-  let currentElem: typeof MainSettingElem | typeof EditPropertyElem = MainSettingElem;
-  let currentType = '';
-  const setSettingElem = (type: string) => {
-    currentType = type;
-    if (type != '') currentElem = EditPropertyElem;
-    else currentElem = MainSettingElem;
-  };
+  let selected_property_key = $state('');
 </script>
 
 <div class="w-full">
-  <svelte:component this={currentElem}
-    on:editProperty={({ detail }) => setSettingElem(detail.editType)}
-    selected_property_key={currentType}
-  />
+  {#if selected_property_key == ''}
+    <MainSettingElem bind:selected_property_key />
+  {:else}
+    <EditPropertyElem bind:selected_property_key />
+  {/if}
 </div>

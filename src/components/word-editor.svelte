@@ -1,4 +1,6 @@
 <script lang='ts'>
+  import { run } from 'svelte/legacy';
+
   import { liveQuery } from 'dexie';
 
   import TagsInput from '@/components/tags-input.svelte';
@@ -19,16 +21,16 @@
     else if (node.type !== NodeType.Word) return EditorState.NonWordSelected;
     return EditorState.WordSelected;
   };
-  $: currentEditorState = getEditorStatus($selectedNode);
-  $: isAllowDelete = [NodeType.Word, NodeType.Roman].includes($selectedNode?.type as NodeType);
+  let currentEditorState = $derived(getEditorStatus($selectedNode));
+  let isAllowDelete = $derived([NodeType.Word, NodeType.Roman].includes($selectedNode?.type as NodeType));
 
-  $: connectedNodes$ = liveQuery<LinkedNode[]>(async () => {
+  let connectedNodes$ = $derived(liveQuery<LinkedNode[]>(async () => {
     if (currentEditorState == EditorState.WordSelected && $selectedNodeId)
       return await graphDB.getNeighborsNodesByNodeId($selectedNodeId);
     if (currentEditorState == EditorState.NonWordSelected && $selectedNodeId)
       return await graphDB.getNeighborsNodesByNodeId($selectedNodeId, 'target');
     return [];
-  });
+  }));
 
   // get selected tags
   const filterLinkedNodes = (filterFunction: (_: LinkedNode) => boolean) => $connectedNodes$
@@ -39,12 +41,12 @@
   const antonymFilterFn = (node: LinkedNode) => node.type == NodeType.Word && node.edgeType == EdgeType.Antonym;
   const formsFilterFn = (node: LinkedNode) => node.type == NodeType.Word && node.edgeType == EdgeType.IsForm;
   const romanFilterFn = (node: LinkedNode) => node.type == NodeType.Roman;
-  $: languageSelected = $connectedNodes$ ? filterLinkedNodes(languageFilterFn) : [];
-  $: POSSelected = $connectedNodes$ ? filterLinkedNodes(POSFilterFn) : [];
-  $: meaningSelected = $connectedNodes$ ? filterLinkedNodes(meaningFilterFn) : [];
-  $: antonymSelected = $connectedNodes$ ? filterLinkedNodes(antonymFilterFn) : [];
-  $: formsSelected = $connectedNodes$ ? filterLinkedNodes(formsFilterFn) : [];
-  $: romanSelected = $connectedNodes$ ? filterLinkedNodes(romanFilterFn) : [];
+  const languageSelected = $derived($connectedNodes$ ? filterLinkedNodes(languageFilterFn) : []);
+  const POSSelected = $derived($connectedNodes$ ? filterLinkedNodes(POSFilterFn) : []);
+  const meaningSelected = $derived($connectedNodes$ ? filterLinkedNodes(meaningFilterFn) : []);
+  const antonymSelected = $derived($connectedNodes$ ? filterLinkedNodes(antonymFilterFn) : []);
+  const formsSelected = $derived($connectedNodes$ ? filterLinkedNodes(formsFilterFn) : []);
+  const romanSelected = $derived($connectedNodes$ ? filterLinkedNodes(romanFilterFn) : []);
 
   // suggestion  function
   const queryNodes = async (queryText: string, preparedIndexes: IndexedNode[]): Promise<Node[]> => {
@@ -98,7 +100,7 @@
     selectedNode.set(clickedNode);
   };
 
-  let openDialog: () => void;
+  let confirmDialog: ConfirmDialog;
   const deleteWordHandler = async () => {
     const toDeleteNodeId = $selectedNodeId ?? '';
     selectedNode.set(undefined);
@@ -108,7 +110,7 @@
   };
 
   // eslint-disable-next-line no-control-regex
-  $: isExceedLatin = !/^[\x00-\xFF]*$/.test($selectedNode?.text ?? 'a');
+  let isExceedLatin = $derived(!/^[\x00-\xFF]*$/.test($selectedNode?.text ?? 'a'));
 
 </script>
 
@@ -121,7 +123,7 @@
 
 {#if currentEditorState == EditorState.WordSelected && $selectedNode}
   <div class="flex flex-col border border-zinc-700 rounded-sm px-4 pb-6">
-    <TagsInput bind:selectedTags={languageSelected}
+    <TagsInput selectedTags={languageSelected}
       inputLabel={'Language'} tagType={NodeType.Language}
       allowTagClick clickTagCallback={tagClickHandler}
       addingCallback={linkNodeHandler(EdgeType.IsLanguage, NodeType.Language)}
@@ -180,7 +182,7 @@
 
     {#if isAllowDelete}
       <div class="flex">
-        <button class="btn btn-error" on:click={openDialog}>
+        <button class="btn btn-error" onclick={() => confirmDialog.open()}>
           Delete
         </button>
       </div>
@@ -196,7 +198,7 @@
 
   {#if isAllowDelete}
     <div class="flex">
-      <button class="btn btn-error" on:click={openDialog}>
+      <button class="btn btn-error" onclick={() => confirmDialog.open()}>
         Delete
       </button>
     </div>
@@ -205,6 +207,6 @@
 {/if}
 
 
-<ConfirmDialog bind:open={openDialog}
+<ConfirmDialog bind:this={confirmDialog}
   onConfirmCallback={deleteWordHandler}
 />

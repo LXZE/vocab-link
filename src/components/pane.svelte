@@ -1,5 +1,4 @@
 <script lang='ts'>
-  import { onMount } from 'svelte';
   import { get } from 'svelte/store';
   import { fade } from 'svelte/transition';
   import { Pane, Splitpanes } from 'svelte-splitpanes';
@@ -18,57 +17,62 @@
   import { graphDB } from '@/lib/graph-db';
   import { init_all_default_nodes, addDummyData, clear_db } from '@/utils/db-action';
 
-  let MINIMUM_EDITOR_WIDTH = 500; // px
-  let screenSize: number;
-  $: screenSize, resizeHandler();
-  let minLPaneSize = 30; // Percentage
-  const calculateRequiredEditorPercentage = (screenSize: number) => {
-    return MINIMUM_EDITOR_WIDTH / screenSize * 100;
-  };
-  const resizeHandler = () => {
-    minLPaneSize = calculateRequiredEditorPercentage(screenSize);
-    if (lPaneSize < minLPaneSize)
-      lPaneSize = minLPaneSize;
-  };
-  onMount(() => resizeHandler());
+  import { INFO } from '@/dev_info';
 
-  let lPaneSize = get(leftPaneSize);
-  $: lPaneSize, leftPaneSize.set(lPaneSize);
-  let rPaneSize = get(rightPaneSize);
-  const prevPaneSize = { lPaneSize, rPaneSize };
-  const toggleGraphViewer = (isExpanded: boolean) => {
-    if (isExpanded) {
-      prevPaneSize.lPaneSize = lPaneSize;
-      prevPaneSize.rPaneSize = rPaneSize;
-      lPaneSize = 0;
-      rPaneSize = 100;
-    } else {
-      lPaneSize = prevPaneSize.lPaneSize;
-      rPaneSize = prevPaneSize.rPaneSize;
-    }
-  };
+  const MINIMUM_EDITOR_WIDTH_PX = 500;
+  const MINIMUM_LEFT_PANE_PERCENT = 30;
+  let screenInnerWidthPX = $state(MINIMUM_EDITOR_WIDTH_PX);
+  let minLeftPaneSizePercent = $state(MINIMUM_LEFT_PANE_PERCENT);
+
+  let leftPanePercent = $state(get(leftPaneSize));
+  let rightPanePercent = $state(get(rightPaneSize));
 
   const resetPaneSize = () => {
-    lPaneSize = 50;
-    rPaneSize = 50;
+    leftPanePercent = 50;
+    rightPanePercent = 50;
   };
 
+  let isSettingOpen = $state(false);
+  let hideComponents = $state(false);
 
-  let isSettingOpen = false;
-  let hideComponents = false;
+  const calculateRequiredEditorPercent = (width_px: number) => {
+    return MINIMUM_EDITOR_WIDTH_PX / width_px * 100;
+  };
+  const resizeHandler = (given_width_px: number) => {
+    const resultLeftPanePercent = calculateRequiredEditorPercent(given_width_px);
+    if (resultLeftPanePercent >= MINIMUM_LEFT_PANE_PERCENT) {
+      leftPanePercent = resultLeftPanePercent;
+    }
+    leftPaneSize.set(leftPanePercent);
+  };
+
+  const prevPaneSize = { left: 50, right: 50 };
+  const toggleGraphViewer = (isExpanded: boolean) => {
+    if (isExpanded) {
+      prevPaneSize.left = leftPanePercent;
+      prevPaneSize.right = rightPanePercent;
+      leftPanePercent = 0;
+      rightPanePercent = 100;
+    } else {
+      leftPanePercent = prevPaneSize.left;
+      rightPanePercent = prevPaneSize.right;
+    }
+    console.log('graph toggle', isExpanded, prevPaneSize);
+  };
+  $effect(() => resizeHandler(screenInnerWidthPX));
 
 </script>
 
 <Splitpanes dblClickSplitter={false} theme='custom-theme'
   on:splitter-click={resetPaneSize}
 >
-	<Pane bind:minSize={minLPaneSize} bind:size={lPaneSize}>
+  <Pane bind:minSize={minLeftPaneSizePercent} bind:size={leftPanePercent}>
     <div id="editor-pane" class="relative flex flex-col p-4 pb-2 gap-4 h-[100vh] overflow-y-auto">
 
       <div id='setting-btn' class='absolute top-2 right-2 tooltip tooltip-left'
         data-tip={(isSettingOpen ? 'close': 'open') + ' setting'}
       >
-        <button class="btn btn-square btn-ghost" on:click={() => isSettingOpen = !isSettingOpen}>
+        <button class="btn btn-square btn-ghost" onclick={() => isSettingOpen = !isSettingOpen}>
           {#if isSettingOpen}
             <Icon icon={closeIcon} />
           {:else}
@@ -82,10 +86,10 @@
       </span>
       {#if import.meta.env.DEV}
         <div class="flex justify-center">
-          <button class="btn" on:click={() => init_all_default_nodes(graphDB.db).then(() => addDummyData(graphDB.db)) }>
+          <button class="btn" onclick={() => init_all_default_nodes(graphDB.db).then(() => addDummyData(graphDB.db))}>
             INIT DB
           </button>
-          <button class="btn" on:click={() => clear_db(graphDB.db)}>
+          <button class="btn" onclick={() => clear_db(graphDB.db)}>
             NUKE DB
           </button>
         </div>
@@ -95,17 +99,17 @@
         {#if !isSettingOpen}
           <div class:hidden={hideComponents}
             transition:fade={{ duration: 50 }}
-            on:outrostart={() => hideComponents = true}
-            on:outroend={() => hideComponents = false}
+            onoutrostart={() => hideComponents = true}
+            onoutroend={() => hideComponents = false}
           >
             <SearchInput />
-            <WordEditor />
+            <!-- <WordEditor /> -->
           </div>
         {:else}
           <div class:hidden={hideComponents}
             transition:fade={{ duration: 50 }}
-            on:outrostart={() => hideComponents = true}
-            on:outroend={() => hideComponents = false}
+            onoutrostart={() => hideComponents = true}
+            onoutroend={() => hideComponents = false}
           >
             <SettingPage />
           </div>
@@ -120,7 +124,7 @@
         '
       >
         <aside class="items-center grid-flow-col">
-          <p>© 2023 / Made with ♥ by <a class='underline' target="_blank" href="https://twitter.com/lxze">@LXZE</a></p>
+          <p>© 2023 - {new Date().getFullYear()} / Made with ♥ by <a class='underline' target="_blank" href={INFO.social_link}>{INFO.user_name}</a></p>
         </aside>
         <nav class="grid-flow-col gap-4 md:place-self-center md:justify-self-end">
           <span>Found a bug? report <a class='underline' target="_blank" href="https://github.com/LXZE/vocab-link/issues">here</a></span>
@@ -129,7 +133,7 @@
 
     </div>
   </Pane>
-	<Pane snapSize={25} bind:size={rPaneSize}>
+  <Pane snapSize={25} bind:size={rightPanePercent}>
     <div class="flex flex-col h-full w-full">
       <span class='w-full text-center p-2 text-xl'>Graph Viewer</span>
       <GraphCanvas toggleGraphViewerFn={toggleGraphViewer} />
@@ -137,7 +141,7 @@
   </Pane>
 </Splitpanes>
 
-<svelte:window bind:innerWidth={screenSize} />
+<svelte:window bind:innerWidth={screenInnerWidthPX} />
 
 <style lang='postcss'>
 #editor-pane {

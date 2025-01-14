@@ -14,10 +14,10 @@
   const CANDIDATE_LIMIT = 10;
 
   let searchTextInputElem: HTMLInputElement;
-  let isSearchFocused: boolean;
-  let searchText = '';
-  let searchCandidateIndex = 0;
-  let searchResultNodes: Node[] = [];
+  let isSearchFocused: boolean = $state(false);
+  let searchText = $state('');
+  let searchCandidateIndex = $state(0);
+  let searchResultNodes: Node[] = $state([]);
 
   const searchNodesByText = debounce((queryText: string) => {
     const normalizedQuery = normalizeWord(queryText);
@@ -33,13 +33,14 @@
       }];
     }
   }, 100, { trailing: true });
-
-  $: searchText, searchCandidateIndex = 0;
-  $: if (searchText.length > 0) {
-    searchNodesByText(searchText);
-  } else {
-    searchResultNodes = [];
-  }
+  $effect(() => {
+    searchCandidateIndex = 0;
+    if (searchText.length > 0) {
+      searchNodesByText(searchText);
+    } else {
+      searchResultNodes = [];
+    }
+  });
 
   const selectWord = async () => {
     const selectedResult = searchResultNodes[searchCandidateIndex] ?? null;
@@ -97,12 +98,12 @@
       <input class="pl-10 py-2 input input-ghost w-full" id="search-word-input"
         name="search" type="search" placeholder="Search word…" autocomplete="off" spellcheck="false"
         bind:this={searchTextInputElem} bind:value={searchText}
-        on:focus={() => isSearchFocused = true} on:blur={() => isSearchFocused = false}
+        onfocus={() => isSearchFocused = true} onblur={() => isSearchFocused = false}
       />
       <div class="flex gap-1 items-center absolute right-0 pr-2 invisible sm:visible">
         <kbd class="kbd kbd-sm">{getModifierKey()}</kbd>
         <kbd class="kbd kbd-sm">K</kbd>
-        <button class="{searchText.length > 0 ? 'visible' : 'invisible'}" on:click={(ev) => {
+        <button class="{searchText.length > 0 ? 'visible' : 'invisible'}" onclick={(ev) => {
           ev.preventDefault();
           searchText = '';
         }}>
@@ -118,12 +119,12 @@
     >
         {#each searchResultNodes as node, idx}
           <li><a href={null} class="{searchCandidateIndex == idx ? 'active' : ''}"
-            on:mousedown={(ev) => {
+            onmousedown={(ev) => {
               // use mousedown instead of click to prevent blur behaviour
               ev.preventDefault();
               selectWord();
             }}
-            on:mouseenter={() => searchCandidateIndex = idx}
+            onmouseenter={() => searchCandidateIndex = idx}
           >
             {#if (node.type != '')}
               {node.text}
@@ -136,4 +137,4 @@
   {/if}
 </form>
 
-<svelte:body on:keydown={bodyKeydownHandler} />
+<svelte:body onkeydown={bodyKeydownHandler} />

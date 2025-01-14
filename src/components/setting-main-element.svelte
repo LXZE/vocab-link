@@ -1,15 +1,16 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-
   import { graphDB } from '@/lib/graph-db';
   import { promptDownload, promptUpload } from '@/lib/utils';
 
-  export const selected_property_key: string = '';
+  interface Props {
+    selected_property_key: string;
+  }
+  let { selected_property_key = $bindable('') }: Props = $props();
 
-  const dispatch = createEventDispatcher();
-  const editProperty = (type: 'language' | 'pos') => {
-    dispatch('editProperty', { editType: type });
+  const setSettingHandle = (type: 'language' | 'pos') => {
+    selected_property_key = type;
   };
+
 
   const importDB = async () => {
     try {
@@ -33,10 +34,10 @@
 <div class='flex flex-col p-2 gap-2'>
   <span class='px-1'>Import & Export</span>
   <div class="flex py-2 gap-2">
-    <button class="btn" on:click={importDB}>
+    <button class="btn" onclick={importDB}>
       Import Database
     </button>
-    <button class="btn" on:click={exportDB}>
+    <button class="btn" onclick={exportDB}>
       Export Database
     </button>
   </div>
@@ -45,10 +46,10 @@
 <div class='flex flex-col p-2 gap-2'>
   <span class='px-1'>Edit property</span>
   <div class="flex  py-2 gap-2">
-    <button class="btn" on:click={() => editProperty('language')} >
+    <button class="btn" onclick={() => setSettingHandle('language')} >
       Language
     </button>
-    <button class="btn" on:click={() => editProperty('pos')}>
+    <button class="btn" onclick={() => setSettingHandle('pos')}>
       Part of speech
     </button>
   </div>

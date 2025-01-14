@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import type { Writable } from 'svelte/store';
 
   import { graphDB } from '@/lib/graph-db';
@@ -13,10 +12,12 @@
   import backIcon from '@iconify/icons-material-symbols/arrow-left-alt-rounded';
   import deleteIcon from '@iconify/icons-material-symbols/delete-forever';
 
-
-  const dispatch = createEventDispatcher();
+  interface Props {
+    selected_property_key: string;
+  }
+  let { selected_property_key = $bindable('') }: Props = $props();
   const back = () => {
-    dispatch('editProperty', { editType: '' });
+    selected_property_key = '';
   };
 
   const toSorted = (map: Map<string, string>) => new Map([...map].sort());
@@ -24,39 +25,41 @@
     'language': ALL_LANGUAGES_MAP,
     'pos': ALL_POS_MAP,
   } as Record<string, Writable<any>>;
-  export let selected_property_key: string;
+  interface Props {
+    selected_property_key: string;
+  }
 
   const current_list = valuesDict[selected_property_key];
 
-  let newPropText = '';
+  let newPropText = $state('');
   const addProperty = async () => {
     if (['pos', 'language'].includes(selected_property_key) && newPropText != '') {
       await graphDB.createNewNode(selected_property_key as NodeType, newPropText);
     }
     newPropText = '';
   };
-  let openDialog: () => void;
-  let deletePropFn: CallableFunction;
+  let confirmDialog: ConfirmDialog;
+  let deletePropFn: CallableFunction = $state(() => {});
   const confirmDeleteSingleProp = (prop_id: string) => {
     deletePropFn = async () => {
       await graphDB.deleteNodeAndConnectedEdges(prop_id);
     };
-    openDialog();
+    confirmDialog.open();
   };
 
-  let selectedPropsId: string[] = [];
+  let selectedPropsId: string[] = $state([]);
   const confirmDeleteMultiProps = () => {
     deletePropFn = async () => {
       await Promise.all(selectedPropsId.map(async (prop_id) =>
         graphDB.deleteNodeAndConnectedEdges(prop_id)
       ));
     };
-    openDialog();
+    confirmDialog.open();
   };
 
 </script>
 
-<button class="btn" on:click={() => back()}>
+<button class="btn" onclick={() => back()}>
   <Icon icon={backIcon} width={20} />
   back
 </button>
@@ -69,7 +72,7 @@
         {selected_property_key.toUpperCase()}
       </th>
       <th class='text-end'>
-        <button class="btn" on:click={() => confirmDeleteMultiProps()}>
+        <button class="btn" onclick={() => confirmDeleteMultiProps()}>
           Bulk delete
         </button>
       </th>
@@ -90,7 +93,7 @@
           </span>
         </th>
         <th class='text-end'>
-          <button class="btn" on:click={() => confirmDeleteSingleProp(prop_id)}>
+          <button class="btn" onclick={() => confirmDeleteSingleProp(prop_id)}>
             <Icon icon={deleteIcon} width={20} />
           </button>
         </th>
@@ -102,7 +105,7 @@
         <input class="input" placeholder={`Add new ${selected_property_key}`} type="text" bind:value={newPropText}>
       </th>
       <th class='text-end'>
-        <button class="btn" on:click={() => addProperty()}>
+        <button class="btn" onclick={() => addProperty()}>
           <Icon icon={addIcon} width={20} />
         </button>
       </th>
@@ -110,6 +113,6 @@
   </tbody>
 </table>
 
-<ConfirmDialog bind:open={openDialog}
+<ConfirmDialog bind:this={confirmDialog}
   onConfirmCallback={deletePropFn}
 />
