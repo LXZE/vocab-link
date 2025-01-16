@@ -1,23 +1,27 @@
-<script lang='ts'>
-  import { onMount } from 'svelte';
-  import { watchResize } from 'svelte-watch-resize';
+<script lang="ts">
+  import { onMount } from "svelte";
+  import { watchResize } from "svelte-watch-resize";
 
-  import { liveQuery } from 'dexie';
-  import ForceGraph, { type ForceGraphInstance } from 'force-graph';
-  import { debounce } from 'lodash';
+  import { liveQuery } from "dexie";
+  import ForceGraph, { type ForceGraphInstance } from "force-graph";
+  import { debounce } from "lodash";
 
-  import Icon from '@iconify/svelte';
-  import IconZoomIn from '@iconify/icons-material-symbols/zoom-in';
-  import IconZoomOut from '@iconify/icons-material-symbols/zoom-out';
-  import IconCenterFocus from '@iconify/icons-material-symbols/center-focus-strong-sharp';
-  import IconExpandContent from '@iconify/icons-material-symbols/expand-content';
-  import IconShrinkContent from '@iconify/icons-material-symbols/close-fullscreen';
+  import Icon from "@iconify/svelte";
+  import IconZoomIn from "@iconify/icons-material-symbols/zoom-in";
+  import IconZoomOut from "@iconify/icons-material-symbols/zoom-out";
+  import IconCenterFocus from "@iconify/icons-material-symbols/center-focus-strong-sharp";
+  import IconExpandContent from "@iconify/icons-material-symbols/expand-content";
+  import IconShrinkContent from "@iconify/icons-material-symbols/close-fullscreen";
 
-  import { graphDB } from '@/lib/graph-db';
-  import type { CustomNodeObject, CustomLinkObject, Node } from '@/lib/graph-db';
-  import { selectedNode } from '@/lib/store';
-  import { graphSetup } from '@/lib/graph-canvas-utils';
-  import { sanitize } from '@/lib/utils';
+  import { graphDB } from "@/lib/graph-db";
+  import type {
+    CustomNodeObject,
+    CustomLinkObject,
+    Node,
+  } from "@/lib/graph-db";
+  import { selectedNode } from "@/lib/store";
+  import { graphSetup } from "@/lib/graph-canvas-utils";
+  import { sanitize } from "@/lib/utils";
 
   interface Props {
     toggleGraphViewerFn: (_arg: boolean) => void;
@@ -27,9 +31,7 @@
 
   let canvas: HTMLElement;
   const resizeHandler = debounce((ev: HTMLElement) => {
-    graphDrawer
-      .width(ev.clientWidth)
-      .height(ev.clientHeight);
+    graphDrawer.width(ev.clientWidth).height(ev.clientHeight);
     if ($selectedNode) {
       graphDrawer.centerAt($selectedNode.x, $selectedNode.y, 500);
     } else {
@@ -67,23 +69,30 @@
   };
   selectedNode.subscribe(async (maybeNode) => {
     clearHighlight();
-    if (maybeNode && maybeNode.id != '') {
-      const detailedMaybeNode = await graphDB.addDetailToNode(maybeNode as unknown as Node);
-      (detailedMaybeNode.neighborsNodeId).forEach(nodeId => highlightNodes.add(nodeId));
-      (detailedMaybeNode.connectedEdgeId).forEach(edgeId => highlightEdges.add(edgeId));
+    if (maybeNode && maybeNode.id != "") {
+      const detailedMaybeNode = await graphDB.addDetailToNode(
+        maybeNode as unknown as Node
+      );
+      detailedMaybeNode.neighborsNodeId.forEach((nodeId) =>
+        highlightNodes.add(nodeId)
+      );
+      detailedMaybeNode.connectedEdgeId.forEach((edgeId) =>
+        highlightEdges.add(edgeId)
+      );
 
-      const existNodeData = graphDrawer.graphData().nodes.find(node => node.id == maybeNode.id);
+      const existNodeData = graphDrawer
+        .graphData()
+        .nodes.find((node) => node.id == maybeNode.id);
       if (!existNodeData || !graphDrawer) return;
       graphDrawer
         .centerAt(existNodeData.x, existNodeData.y, 500)
         .zoomToFit(500, 50, (node: CustomNodeObject) => {
-          return highlightNodes.has(node.id! as string) || node.id == maybeNode.id;
+          return (
+            highlightNodes.has(node.id! as string) || node.id == maybeNode.id
+          );
         });
-    }
-    else if (graphDrawer != undefined) {
-      graphDrawer
-        .zoomToFit(500, 20)
-        .centerAt(0, 0, 500);
+    } else if (graphDrawer != undefined) {
+      graphDrawer.zoomToFit(500, 20).centerAt(0, 0, 500);
     }
   });
 
@@ -93,21 +102,27 @@
 
     // set up for click
     graphDrawer
-      .onZoom(({ k }) => zoomLevel = k)
+      .onZoom(({ k }) => (zoomLevel = k))
       .onBackgroundClick(() => {
         selectedNode.set(undefined);
       })
-      .linkWidth((link: CustomLinkObject) => highlightEdges.has(link.id!) ? 5 : 1)
-      .linkDirectionalParticleWidth((link: CustomLinkObject) => highlightEdges.has(link.id!) ? 4 : 0)
+      .linkWidth((link: CustomLinkObject) =>
+        highlightEdges.has(link.id!) ? 5 : 1
+      )
+      .linkDirectionalParticleWidth((link: CustomLinkObject) =>
+        highlightEdges.has(link.id!) ? 4 : 0
+      )
       .linkDirectionalParticles(1)
-      .linkDirectionalParticleColor('#000000')
+      .linkDirectionalParticleColor("#000000")
       .onNodeClick((node: CustomNodeObject) => {
         selectedNode.set(node);
       })
       .nodeVisibility((node: CustomNodeObject) => {
         if (!$selectedNode) return true; // if no any node selected, then show all
         // otherwise, show only selected node and highlight nodes
-        return node.id == $selectedNode.id || highlightNodes.has(node.id as string);
+        return (
+          node.id == $selectedNode.id || highlightNodes.has(node.id as string)
+        );
       })
       .linkVisibility((link: CustomLinkObject) => {
         if (!$selectedNode) return true; // if no any node selected, then show all
@@ -119,20 +134,34 @@
         node.__rectDimension && ctx.fillRect(...node.__rectDimension);
       });
 
-    const graphData$ = liveQuery(async () => await graphDB.getGraphForDisplay());
-    const graphSubscription = graphData$.subscribe(({ nodes: newNodes, links: newLinks }) => {
-      const { nodes: previousNode, links: previousLink } = graphDrawer.graphData();
-      const previousNodeData = new Map(previousNode.map((node: CustomNodeObject) => [node.id! as string, node]));
-      const previousLinkData = new Map(previousLink.map((link: CustomLinkObject) => [link.id!, link]));
-      nodes = newNodes.map((node) => {
-        return Object.assign(
-          previousNodeData.get(node.id! as string) ?? {},
-          {...node, text: sanitize(node.text ?? '')}
+    const graphData$ = liveQuery(
+      async () => await graphDB.getGraphForDisplay()
+    );
+    const graphSubscription = graphData$.subscribe(
+      ({ nodes: newNodes, links: newLinks }) => {
+        const { nodes: previousNode, links: previousLink } =
+          graphDrawer.graphData();
+        const previousNodeData = new Map(
+          previousNode.map((node: CustomNodeObject) => [
+            node.id! as string,
+            node,
+          ])
         );
-      });
-      links = newLinks.map((link) => previousLinkData.get(link.id! as string) ?? link);
-      updateGraph();
-    });
+        const previousLinkData = new Map(
+          previousLink.map((link: CustomLinkObject) => [link.id!, link])
+        );
+        nodes = newNodes.map((node) => {
+          return Object.assign(previousNodeData.get(node.id! as string) ?? {}, {
+            ...node,
+            text: sanitize(node.text ?? ""),
+          });
+        });
+        links = newLinks.map(
+          (link) => previousLinkData.get(link.id! as string) ?? link
+        );
+        updateGraph();
+      }
+    );
 
     return () => {
       graphDrawer.pauseAnimation();
@@ -142,40 +171,74 @@
   });
 </script>
 
-<div id="canvas-envelope" class="border border-slate-800 h-full w-full"
+<div
+  id="canvas-envelope"
+  class="border border-slate-800 h-full w-full"
   use:watchResize={resizeHandler}
 >
   <div class="relative z-10">
-    <ul class="absolute top-4 right-4 menu menu-horizontal bg-base-200 rounded-box">
-      <li><a href={null} id="canvas-zoom-in" class="tooltip" data-tip="Zoom in"
-        onclick={() => zoomIn()}
+    <ul
+      class="absolute top-4 right-4 menu menu-horizontal bg-base-200 rounded-box"
+    >
+      <li>
+        <a
+          href={null}
+          id="canvas-zoom-in"
+          class="tooltip"
+          data-tip="Zoom in"
+          onclick={() => zoomIn()}
         >
-        <Icon icon={IconZoomIn} width="20" />
-      </a></li>
-      <li><a href={null} id="canvas-zoom-out" class="tooltip" data-tip="Zoom out"
-        onclick={() => zoomOut()}
+          <Icon icon={IconZoomIn} width="20" />
+        </a>
+      </li>
+      <li>
+        <a
+          href={null}
+          id="canvas-zoom-out"
+          class="tooltip"
+          data-tip="Zoom out"
+          onclick={() => zoomOut()}
         >
-        <Icon icon={IconZoomOut} width="20" />
-      </a></li>
-      <li><a href={null} id="canvas-center" class="tooltip" data-tip="Re-center"
-        onclick={() => recenter()}
+          <Icon icon={IconZoomOut} width="20" />
+        </a>
+      </li>
+      <li>
+        <a
+          href={null}
+          id="canvas-center"
+          class="tooltip"
+          data-tip="Re-center"
+          onclick={() => recenter()}
         >
-        <Icon icon={IconCenterFocus} width="20" />
-      </a></li>
+          <Icon icon={IconCenterFocus} width="20" />
+        </a>
+      </li>
       {#if !isExpandGraph}
-        <li><a href={null} id="canvas-expand" class="tooltip" data-tip="Expand"
-          onclick={() => expandGraphHandler(true)}
+        <li>
+          <a
+            href={null}
+            id="canvas-expand"
+            class="tooltip"
+            data-tip="Expand"
+            onclick={() => expandGraphHandler(true)}
           >
-          <Icon icon={IconExpandContent} width="20" />
-        </a></li>
+            <Icon icon={IconExpandContent} width="20" />
+          </a>
+        </li>
       {:else}
-        <li><a href={null} id="canvas-minimize" class="tooltip" data-tip="Mimimize"
-          onclick={() => expandGraphHandler(false)}
+        <li>
+          <a
+            href={null}
+            id="canvas-minimize"
+            class="tooltip"
+            data-tip="Mimimize"
+            onclick={() => expandGraphHandler(false)}
           >
-          <Icon icon={IconShrinkContent} width="20" />
-        </a></li>
+            <Icon icon={IconShrinkContent} width="20" />
+          </a>
+        </li>
       {/if}
     </ul>
   </div>
-  <div id='canvas' bind:this={canvas}></div>
+  <div id="canvas" bind:this={canvas}></div>
 </div>

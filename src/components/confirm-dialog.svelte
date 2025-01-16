@@ -1,4 +1,4 @@
-<script lang='ts'>
+<script lang="ts">
   interface Props {
     onConfirmCallback?: CallableFunction;
   }
@@ -13,12 +13,18 @@
   };
 </script>
 
-<dialog id="confirm-delete-dialog" class="modal" bind:this={confirmDeleteDialog}>
+<dialog
+  id="confirm-delete-dialog"
+  class="modal"
+  bind:this={confirmDeleteDialog}
+>
   <div class="modal-box">
     <h3 class="font-bold text-lg">Warning!</h3>
     <p class="py-4 text-md">
-      The selected node and all connections will be deleted and <span class="underline">cannot be undone</span>,
-      <span class='text-lg underline text-red-500'>confirm?</span>
+      The selected node and all connections will be deleted and <span
+        class="underline">cannot be undone</span
+      >,
+      <span class="text-lg underline text-red-500">confirm?</span>
     </p>
     <div class="modal-action">
       <button class="btn" onclick={closeConfirmDialogHandler}>Cancel</button>

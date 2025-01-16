@@ -30,7 +30,7 @@ module.exports = {
   ],
   rules: {
     // custom
-    quotes: ['warn', 'single'],
+    quotes: ['warn', 'dougle'],
     indent: ['warn', 2],
     semi: 1,
     'no-redeclare': 0,

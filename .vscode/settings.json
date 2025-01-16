@@ -4,5 +4,6 @@
   "eslint.validate": [
     "svelte",
     "typescript"
-  ]
+  ],
+  "editor.formatOnSave": true,
 }
