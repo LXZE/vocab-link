@@ -39,17 +39,20 @@
   let isSettingOpen = $state(false);
   let hideComponents = $state(false);
 
-  const calculateRequiredEditorPercent = (width_px: number) => {
-    return (MINIMUM_EDITOR_WIDTH_PX / width_px) * 100;
-  };
+  // if 30% of screen width is less than 500px, set minLeftPaneSizePercent to at least 500px of screen width
   const resizeHandler = (given_width_px: number) => {
-    const resultLeftPanePercent =
-      calculateRequiredEditorPercent(given_width_px);
-    if (resultLeftPanePercent >= MINIMUM_LEFT_PANE_PERCENT) {
-      leftPanePercent = resultLeftPanePercent;
+    if (
+      (given_width_px * MINIMUM_LEFT_PANE_PERCENT) / 100 <
+      MINIMUM_EDITOR_WIDTH_PX
+    ) {
+      minLeftPaneSizePercent = (MINIMUM_EDITOR_WIDTH_PX / given_width_px) * 100;
+    } else {
+      minLeftPaneSizePercent = MINIMUM_LEFT_PANE_PERCENT;
     }
-    leftPaneSize.set(leftPanePercent);
   };
+  $effect(() => {
+    leftPaneSize.set(leftPanePercent);
+  });
 
   const prevPaneSize = { left: 50, right: 50 };
   const toggleGraphViewer = (isExpanded: boolean) => {
@@ -70,11 +73,12 @@
   dblClickSplitter={false}
   theme="custom-theme"
   on:splitter-click={resetPaneSize}
+  horizontal={screenInnerWidthPX < 768}
 >
-  <Pane bind:minSize={minLeftPaneSizePercent} bind:size={leftPanePercent}>
+  <Pane minSize={minLeftPaneSizePercent} bind:size={leftPanePercent}>
     <div
       id="editor-pane"
-      class="relative flex flex-col p-4 pb-2 gap-4 h-[100vh] overflow-y-auto"
+      class="relative flex flex-col p-4 pb-2 gap-4 h-full overflow-y-auto"
     >
       <div
         id="setting-btn"
