@@ -27,7 +27,7 @@
     minimumChars?: number;
     /** used for query related Nodes */
     tagType?: NodeType;
-    selectedTags?: LinkedNode[] | string[];
+    selectedTags: LinkedNode[] | string[];
     disableInput?: boolean;
     disableRemoveTag?: boolean;
     maxTags?: number;
@@ -64,23 +64,18 @@
     clickTagCallback = (_) => {},
   }: Props = $props();
 
-  let internalSelectedTags = $state(
+  let _selectedTags = $derived(
     selectedTags.map((tag) => {
-      if (typeof tag == "object")
-        return Object.assign(tag, { showText: tag.text });
+      if (typeof tag == "object") return { ...tag, showText: tag.text };
       return tag;
     })
   );
 
-  todo fix tags to be derived from props
-
   let tagInput = $state("");
   let selectedChoiceIndex = $state(0);
   $effect(() => {
-    // every time tag input change, select choice 0 as default
-    if (typeof tagInput == "string") {
-      selectedChoiceIndex = 0;
-    }
+    tagInput;
+    selectedChoiceIndex = 0;
   });
 
   // non word candidate choices
@@ -91,9 +86,7 @@
     }
   });
   let selectedTagsSet = $derived(
-    new Set(
-      internalSelectedTags.map((tag) => (typeof tag == "object" ? tag.id : tag))
-    )
+    new Set(_selectedTags.map((tag) => (typeof tag == "object" ? tag.id : tag)))
   );
   let remainChoices = $derived(
     allTags
@@ -109,7 +102,7 @@
     showText,
     createdAt: Date.now(),
   });
-  const internalAutoCompleteFn = async (
+  const getAutoCompleteChoice = async (
     queryText: string
   ): Promise<TagChoice[]> => {
     if (!allowCreateNode)
@@ -133,7 +126,7 @@
 
     if (
       normalizedQueryText.length > 0 && // query text is not empty string
-      !internalSelectedTags.some((tag) =>
+      !_selectedTags.some((tag) =>
         typeof tag == "string" ? tag == queryText : tag.text == queryText
       ) && // no query text in selected choice
       !result.some((res) => res.text == queryText) // no query text in choices
@@ -155,7 +148,7 @@
       if (tagInput.length < minimumChars) return;
 
       candidateChoices = allowCreateNode
-        ? await internalAutoCompleteFn(tagInput)
+        ? await getAutoCompleteChoice(tagInput)
         : remainChoices.filter((choice) =>
             choice.text.toLowerCase().includes(tagInput.toLowerCase())
           );
@@ -163,7 +156,10 @@
     100,
     { trailing: true, maxWait: 200 }
   );
-  // $: (tagInput, internalSelectedTags), setCandidateChoices();
+  $effect(() => {
+    [tagInput, selectedTags];
+    setCandidateChoices();
+  });
 
   const tagClickHandler = (tag: TagChoice) => {
     if (allowTagClick) {
@@ -180,15 +176,16 @@
     tagInput = "";
   };
   const popTag = () => {
-    const last_index = internalSelectedTags.length - 1;
-    const poppedTag = internalSelectedTags.pop();
+    const last_index = _selectedTags.length - 1;
+    const poppedTag = _selectedTags[last_index];
     if (!poppedTag) return;
     deletingCallback(
       typeof poppedTag == "string" ? last_index : (poppedTag as LinkedNode)
     );
+    1;
   };
   const removeTag = (idx: number) => {
-    const [removedTag] = internalSelectedTags.splice(idx, 1);
+    const [removedTag] = _selectedTags.splice(idx, 1);
     deletingCallback(
       typeof removedTag == "string" ? idx : (removedTag as LinkedNode)
     );
@@ -223,17 +220,14 @@
       case "ArrowUp": {
         ev.preventDefault();
         selectedChoiceIndex =
-          selectedChoiceIndex == 0
-            ? candidateChoices.length - 1
-            : selectedChoiceIndex - 1;
+          (selectedChoiceIndex + candidateChoices.length - 1) %
+          candidateChoices.length;
         return;
       }
       case "ArrowDown": {
         ev.preventDefault();
         selectedChoiceIndex =
-          selectedChoiceIndex == candidateChoices.length - 1
-            ? 0
-            : selectedChoiceIndex + 1;
+          (selectedChoiceIndex + 1) % candidateChoices.length;
         return;
       }
       default:
@@ -260,9 +254,9 @@
     }}
   >
     <div class="tags-input" bind:this={inputLayout}>
-      {#if internalSelectedTags.length > 0}
+      {#if _selectedTags.length > 0}
         <div class="tags">
-          {#each internalSelectedTags as tag, idx}
+          {#each _selectedTags as tag, idx}
             <button
               class={`tag ${allowTagClick ? "cursor-pointer" : "cursor-auto"}`}
               onpointerdown={(ev) => {
@@ -290,7 +284,7 @@
           {/each}
         </div>
       {/if}
-      {#if !disableInput && internalSelectedTags.length < maxTags}
+      {#if !disableInput && _selectedTags.length < maxTags}
         <input
           bind:this={inputElem}
           autocomplete="off"
