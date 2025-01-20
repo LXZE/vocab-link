@@ -3,6 +3,7 @@ module.exports = {
   env: { browser: true, es2020: true },
   plugins: ['vitest-globals'],
   extends: [
+    'prettier',
     'eslint:recommended',
     'plugin:svelte/recommended',
   ],
@@ -30,7 +31,7 @@ module.exports = {
   ],
   rules: {
     // custom
-    quotes: ['warn', 'dougle'],
+    quotes: ['warn', 'double'],
     indent: ['warn', 2],
     semi: 1,
     'no-redeclare': 0,
